@@ -1,0 +1,2300 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+
+        <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitoria - EREM NSF</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        body { background: #f0f2f5; color: #1a1a1a; }
+        .auth-container { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: #6366f1; padding: 20px; }
+        .auth-box { background: white; padding: 30px; border-radius: 15px; width: 100%; max-width: 450px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+        h2 { text-align: center; margin-bottom: 22px; color: #4f46e5; }
+        h3 { text-align: center; margin-bottom: 18px; color: #e16a3f; }
+        h4 { text-align: center; margin-bottom: 17px; color: #8b9da5; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 5px; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; outline: none; }
+        .pin-input-group { display: flex; gap: 10px; justify-content: center; }
+        .pin-box { width: 45px; height: 45px; text-align: center; font-size: 18px; font-weight: bold; border: 2px solid #ddd; border-radius: 8px; }
+        .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; background: #6366f1; color: white; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        .btn-sm { padding: 8px 12px; font-size: 12px; border-radius: 6px; border:none; color:white; cursor:pointer;}
+        .btn-info { background: #3b82f6; }
+        .btn-success { background: #10b981; }
+        .btn-danger { background: #ef4444; }
+        .btn-warning { background: #f59e0b; }
+        .link-btn { background: none; color: #6366f1; border: none; width: 100%; margin-top: 15px; cursor: pointer; font-size: 13px; }
+        #mainApp { display: none; min-height: 100vh; }
+        .sidebar { width: 260px; background: #1e293b; color: white; padding: 20px; position: fixed; height: 100%; overflow-y: auto; }
+        .content { margin-left: 260px; padding: 30px; width: calc(100% - 260px); }
+        .nav-item { padding: 12px; cursor: pointer; border-radius: 8px; margin-bottom: 5px; }
+        .nav-item:hover, .nav-item.active { background: #334155; }
+        .screen { display: none; }
+        .screen.active { display: block; }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { text-align: left; padding: 12px; border-bottom: 1px solid #eee; font-size: 13px; }
+        .hidden { display: none; }
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; }
+        .modal-content { background: white; padding: 25px; border-radius: 12px; width: 95%; max-width: 600px; max-height: 90vh; overflow-y: auto; }
+        .feedback-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-top: 10px; }
+        .feedback-item { background: #f8fafc; padding: 12px; border-radius: 8px; border-left: 4px solid #ddd; }
+        .fb-good { border-left-color: #10b981; }
+        .fb-mid { border-left-color: #f59e0b; }
+        .fb-low { border-left-color: #ef4444; }
+        .filter-group { display: flex; gap: 10px; margin-bottom: 15px; background: #fff; padding: 10px; border-radius: 8px; }
+        .medal-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; margin-top: 15px; }
+        .medal-card { border: 1px solid #e2e8f0; padding: 10px; border-radius: 10px; text-align: center; }
+        .medal-card.locked { opacity: 0.4; grayscale: 100%; }
+        .medal-card.unlocked { border-color: #fbbf24; background: #fffbeb; }
+        .progress-container { margin-top: 20px; background: #e2e8f0; border-radius: 10px; height: 24px; position: relative; overflow: hidden; }
+        .progress-bar { height: 100%; background: linear-gradient(90deg, #6366f1, #a855f7); transition: width 0.5s ease; }
+        .progress-text { position: absolute; width: 100%; text-align: center; top: 0; font-size: 11px; font-weight: bold; line-height: 24px; color: #1e293b; }
+        .cientista-banner { display: none; background: linear-gradient(135deg, #f7d274 0%, #0be5f5 100%); color: #000; padding: 15px; border-radius: 12px; text-align: center; margin-bottom: 20px; border: 2px solid #b45309; }
+        .level-tag { padding: 4px 10px; border-radius: 6px; color: white; font-size: 13px; font-weight: bold; }
+        .status-badge { padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; }
+        .pending { background: #fef3c7; color: #92400e; }
+        .done { background: #d1fae5; color: #065f46; }
+        .in-progress { background: #dbeafe; color: #1e40af; }
+        .rubrica-box { background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 15px; }
+        .levels-road { display: flex; gap: 8px; margin-top: 10px; font-size: 10px; font-weight: bold; flex-wrap: wrap; }
+        .level-step { padding: 3px 8px; border-radius: 4px; opacity: 0.25; background: #ddd; color: #666; transition: all 0.3s; }
+        .level-step.reached { opacity: 1; color: white; }
+        .urgency-tag { font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: bold; color: white; }
+        .urg-alta { background: #ef4444; }
+        .urg-media { background: #f59e0b; }
+        .urg-baixa { background: #10b981; }
+        .activity-card { border: 1px solid #e2e8f0; padding: 15px; border-radius: 10px; margin-bottom: 10px; position: relative; }
+        .activity-clube-label { font-size: 10px; color: #6366f1; font-weight: bold; text-transform: uppercase; margin-bottom: 5px; display: block; }
+        .activity-late { color: #ef4444; font-weight: bold; font-size: 11px; margin-top: 5px; }
+        .feedback-view-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px; margin-top: 5px; }
+        /* ===== RANKING GERAL ===== */
+.ranking-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 8px;
+}
+
+.ranking-table thead th {
+    font-size: 12px;
+    text-transform: uppercase;
+    color: #64748b;
+    text-align: left;
+}
+
+.ranking-table tbody tr {
+    background: #f8fafc;
+    border-radius: 12px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+}
+
+.ranking-table tbody td {
+    padding: 14px;
+    font-size: 13px;
+    vertical-align: middle;
+}
+
+.rank-pos {
+    font-weight: bold;
+    text-align: center;
+    color: #6366f1;
+}
+
+.rank-name {
+    font-weight: 600;
+}
+
+.rank-points {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.rank-badge {
+    font-size: 11px;
+    padding: 4px 8px;
+    border-radius: 999px;
+    font-weight: bold;
+    white-space: nowrap;
+}
+
+.badge-mes {
+    background: #e0f2fe;
+    color: #0369a1;
+}
+
+.badge-medalha {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.badge-total {
+    background: #6366f1;
+    color: white;
+}
+/* ===== CLUBES & PROJETOS ===== */
+.clubes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 16px;
+    margin-top: 20px;
+}
+
+.clube-card {
+    background: white;
+    border-radius: 14px;
+    padding: 18px;
+    box-shadow: 0 4px 10px rgba(0,0,0,.05);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.clube-area {
+    font-size: 11px;
+    font-weight: bold;
+    color: #6366f1;
+    text-transform: uppercase;
+}
+
+.clube-title {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 8px 0;
+}
+
+.clube-meta {
+    font-size: 12px;
+    color: #64748b;
+}
+
+.clube-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 15px;
+    flex-wrap: wrap;
+}
+/* Estilos exclusivos para o Dashboard do Admin */
+.admin-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.stat-card {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    border-left: 5px solid #6366f1;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+}
+
+.stat-card h3 {
+    font-size: 12px;
+    color: #64748b;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    text-align: left;
+}
+
+.stat-card .value {
+    font-size: 28px;
+    font-weight: bold;
+    color: #1e293b;
+}
+
+.admin-quick-actions {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 25px;
+}
+
+.action-card {
+    background: #fff;
+    padding: 15px;
+    border-radius: 10px;
+    cursor: pointer;
+    border: 1px solid #e2e8f0;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 600;
+}
+
+.action-card:hover {
+    background: #f8fafc;
+    border-color: #6366f1;
+    transform: translateY(-2px);
+}
+    </style>
+</head>
+<body>
+
+    <div id="loginScreen" class="auth-container">
+        <div class="auth-box">
+            <h2>⚛️ SIMON</h2>
+            <h4>Sistema Integrado de Monitoria Online</h4>
+            <h3>Entrar no Sistema</h3>
+            <div id="loginError" style="color: red; font-size: 12px; text-align: center; margin-bottom: 10px;"></div>
+            <div class="form-group"><label>CPF (apenas números)</label><input type="text" id="loginCPF"></div>
+            <div class="form-group">
+                <label>Senha (PIN de 4 dígitos)</label>
+                <div class="pin-input-group" id="loginPinGroup">
+                    <input type="password" maxlength="1" class="pin-box"><input type="password" maxlength="1" class="pin-box"><input type="password" maxlength="1" class="pin-box"><input type="password" maxlength="1" class="pin-box">
+                </div>
+            </div>
+            <button class="btn" onclick="handleLogin()">Acessar</button>
+            <button class="link-btn" onclick="toggleAuth('register')">Cadastrar Novo Monitor</button>
+        </div>
+    </div>
+
+    <div id="registerScreen" class="auth-container" style="display:none;">
+        <div class="auth-box">
+            <h2>Cadastro de Monitor</h2>
+            <div class="form-group"><label>Nome Completo</label><input type="text" id="regNome"></div>
+            <div style="display: flex; gap: 10px;">
+                <div class="form-group" style="flex: 1;"><label>CPF (apenas números)</label><input type="text" id="regCPF"></div>
+                <div class="form-group" style="flex: 1;"><label>Celular (apenas números)</label><input type="text" id="regCelular" placeholder="(81) 9..."></div>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <div class="form-group" style="flex: 1;"><label>Data de Nascimento</label><input type="date" id="regData"></div>
+                <div class="form-group" style="flex: 1;"><label>Turma</label><select id="regTurma"></select></div>
+            </div>
+            <div class="form-group">
+                <label>Definir Senha (PIN de 4 dígitos)</label>
+                <div class="pin-input-group" id="regPinGroup">
+                    <input type="password" maxlength="1" class="pin-box"><input type="password" maxlength="1" class="pin-box"><input type="password" maxlength="1" class="pin-box"><input type="password" maxlength="1" class="pin-box">
+                </div>
+            </div>
+            <button class="btn" onclick="handleRegister()">Criar Conta</button>
+            <button class="link-btn" onclick="toggleAuth('login')">Voltar ao Login</button>
+        </div>
+    </div>
+
+    <div id="mainApp">
+        <div class="sidebar">
+            <h3 style="margin-bottom: 25px;">🔬 Monitoria de Física</h3>
+            <div id="navMenu">
+                <div class="nav-item active" onclick="showScreen('dash')">Painel</div>
+                <div class="nav-item" onclick="showScreen('tarefas')">Tarefas</div>
+                <div class="nav-item" onclick="showScreen('perfil')">Meu Perfil</div>
+                <div id="adminMenu" class="hidden">
+                    <hr style="opacity: 0.2; margin: 15px 0;">
+                    <div class="nav-item" onclick="showScreen('admin')">Gerenciar Monitores</div>
+                    <div class="nav-item" onclick="showScreen('avaliacoes')">Avaliações</div>
+                </div>
+            </div>
+            <button class="btn btn-danger" style="margin-top: 50px;" onclick="logout()">Sair</button>
+        </div>
+
+        <div class="content">
+            <div id="screen-dash" class="screen active">
+    
+    <div id="adminDashContent" class="hidden">
+    <h2 style="margin-bottom: 20px; color: #1e293b; text-align: left;">Painel do Coordenador Geral</h2>
+    
+    <div class="admin-stats-grid">
+        <div class="stat-card">
+            <h3>Total de Monitores</h3>
+            <div class="value" id="statTotalMonitores">0</div>
+        </div>
+        
+        <div class="stat-card">
+            <h3>Monitores Destaque</h3>
+            <div id="statMonitorDestaque" style="font-size: 14px;">
+                <span style="font-size:12px; color:#94a3b8;">Carregando...</span>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <h3>Tarefas Abertas</h3>
+            <div class="value" id="statTarefasAbertas">0</div>
+        </div>
+    </div>
+    
+    <div class="admin-quick-actions">
+        <div class="action-card" onclick="openAdminModal()">
+            <span style="font-size:20px;">👤</span> + Cadastrar Monitor
+        </div>
+        <div class="action-card" onclick="showScreen('avaliacoes')">
+            <span style="font-size:20px;">📝</span> Lançar Avaliações
+        </div>
+        <div class="action-card" onclick="openTarefaModal()">
+            <span style="font-size:20px;">📅</span> + Nova Tarefa
+        </div>
+    </div>
+    
+    <div class="card">
+        <h3>⚠️ Alertas e Prazos Críticos</h3>
+        <div id="adminAlerts">
+            <span style="font-size:12px; color:#94a3b8;">Nenhum prazo crítico.</span>
+        </div>
+    </div>
+    
+    <div class="card">
+        <h3>🏆 Top 5 Monitores</h3>
+        <table style="width:100%;">
+            <tbody id="miniRankingAdmin"></tbody>
+        </table>
+    </div>
+</div>
+
+    <div id="monitorDashContent">
+        <div id="cientistaBanner" class="cientista-banner">
+            <h2>🎉 Parabéns! Você conquistou o selo Monitor Cientista ⭐</h2>
+            <p>
+                Esse selo reconhece sua trajetória científica completa:<br>
+                leitura, pesquisa, produção acadêmica, participação em eventos,
+                mentorias e olimpíadas.
+            </p>
+            <p style="margin-top:8px;font-size:13px;">
+                O selo Monitor Cientista representa seu histórico e suas conquistas acadêmicas
+                e não depende das avaliações mensais.
+            </p>
+            <b>Continue evoluindo e inspirando outros monitores!</b>
+        </div>
+
+        <h2>Bem-vindo(a), <span id="userDisplayName"></span></h2>
+
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: start; flex-wrap: wrap; gap: 20px;">
+                <div style="flex: 2; min-width: 300px;">
+                    <h3 style="color: #4f46e5; margin-bottom: 15px; text-align: left;">📊 Resumo de Pontuação</h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px; margin-bottom: 15px;">
+                        <div style="background: #f8fafc; padding: 12px; border-radius: 10px; text-align: center; border: 1px solid #e2e8f0;">
+                            <span style="font-size: 11px; color: #64748b; display: block; font-weight: bold; text-transform: uppercase;">Mês Atual</span>
+                            <b id="pointsMonth" style="font-size: 20px; color: #1e293b;">0</b>
+                        </div>
+                        <div style="background: #f8fafc; padding: 12px; border-radius: 10px; text-align: center; border: 1px solid #e2e8f0;">
+                            <span style="font-size: 11px; color: #64748b; display: block; font-weight: bold; text-transform: uppercase;">Medalhas</span>
+                            <b id="pointsMedals" style="font-size: 20px; color: #1e293b;">0</b>
+                        </div>
+                        <div style="background: #6366f1; padding: 12px; border-radius: 10px; text-align: center; color: white; box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.4);">
+                            <span style="font-size: 11px; opacity: 0.9; display: block; font-weight: bold; text-transform: uppercase;">Total Geral</span>
+                            <b id="userPoints" style="font-size: 20px;">0</b>
+                        </div>
+                    </div>
+                    <div id="userLevelBadge" style="margin-top: 12px; font-weight: 600; font-size: 14px; color: #475569;"></div>
+                    <div id="levelsRoad" class="levels-road"></div>
+                </div>
+
+                <div style="flex: 1; min-width: 180px; text-align: right;">
+                    <span style="font-size: 11px; font-weight: bold; color: #64748b; text-transform: uppercase;">Progresso Monitor Cientista</span>
+                    <div class="progress-container" style="width: 100%; margin-top: 5px;">
+                        <div class="progress-bar" id="progressBar"></div>
+                        <div class="progress-text" id="progressText">0/7 Medalhas</div>
+                    </div>
+                    <p style="font-size: 10px; color: #94a3b8; margin-top: 8px;">Ganhe 5 pontos por cada medalha conquistada.</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="monthlyReport" class="card">
+            <h4>📅 Avaliação mensal</h4>
+            <p style="font-size:13px;color:#475569;">Confira abaixo o resultado da sua avaliação neste mês.</p>
+            <div id="feedbackGrid" class="feedback-grid"></div>
+        </div>
+
+        <div class="card">
+            <h4>🏅 Minhas Medalhas</h4>
+            <div id="userMedalsDash" class="medal-grid"></div>
+         <div style="padding: 12px; border-radius: 8px; margin-bottom: 15px;">
+        <p style="font-size: 13px; color: #1e293b; line-height: 1.5;">
+            As medalhas comprovam sua evolução técnica. Ao completar seu quadro de medalhas, você atinge o nível <b>Monitor Cientista</b> e desbloqueia:
+        </p>
+        
+        <ul style="font-size: 12px; color: #78350f; padding-left: 20px; margin-top: 10px; line-height: 1.8;">
+            <li>✅ <b>Pontuação Extra:</b> Bônus nas provas trimestrais de Física.</li>
+            <li>✅ <b>Prioridade Total:</b> Preferência em temas de pesquisa, feiras de ciências e viagens.</li>
+            <li>✅ <b>Liderança:</b> Elegibilidade para concorrer à <b>Presidência da Monitoria</b>.</li>
+        </ul>
+    </div>
+
+    <div id="userMedalsDash" class="medal-grid"></div>   
+        </div>
+
+
+<div class="card" style="margin-top: 20px; border-left: 5px solid #4f46e5;">
+    <h4 style="text-align: left; color: #4f46e5; margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
+        📈 Progressão e Recompensas Trimestrais
+    </h4>
+    
+    <p style="font-size: 13px; color: #64748b; margin-bottom: 15px;">
+        Sua evolução técnica e engajamento refletem diretamente na sua nota de Física. Confira os requisitos e o bônus de cada nível:
+    </p>
+
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+        
+        <div style="display: flex; align-items: center; justify-content: space-between; background: #ffffff; padding: 12px; border-radius: 8px; border-left: 4px solid #0fe04e;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <div style="background: #0fe04e; color: white; width: 100px; text-align: center; padding: 4px; border-radius: 4px; font-size: 10px; font-weight: bold;">INICIANTE</div>
+                <span style="font-size: 12px; color: #475569;">Fase de adaptação e treinamento.</span>
+            </div>
+            <div style="text-align: right;">
+                <span style="display: block; font-size: 14px; font-weight: bold; color: #1e293b;">+ 1,0</span>
+                <span style="font-size: 9px; color: #94a3b8;">PONTO EXTRA</span>
+            </div>
+        </div>
+
+        <div style="display: flex; align-items: center; justify-content: space-between; background: #ffffff; padding: 12px; border-radius: 8px; border-left: 4px solid #3b82f6;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <div style="background: #3b82f6; color: white; width: 100px; text-align: center; padding: 4px; border-radius: 4px; font-size: 10px; font-weight: bold;">COLABORADOR</div>
+                <span style="font-size: 12px; color: #475569;">Participação ativa nas tarefas.</span>
+            </div>
+            <div style="text-align: right;">
+                <span style="display: block; font-size: 14px; font-weight: bold; color: #3b82f6;">+ 1,5</span>
+                <span style="font-size: 9px; color: #94a3b8;">PONTOS EXTRA</span>
+            </div>
+        </div>
+
+        <div style="display: flex; align-items: center; justify-content: space-between; background: #ffffff; padding: 12px; border-radius: 8px; border-left: 4px solid #8b5cf6;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <div style="background: #8b5cf6; color: white; width: 100px; text-align: center; padding: 4px; border-radius: 4px; font-size: 10px; font-weight: bold;">DESENVOLVEDOR</div>
+                <span style="font-size: 12px; color: #475569;">Foco em pesquisa e relatórios.</span>
+            </div>
+            <div style="text-align: right;">
+                <span style="display: block; font-size: 14px; font-weight: bold; color: #8b5cf6;">+ 2,5</span>
+                <span style="font-size: 9px; color: #94a3b8;">PONTOS EXTRA</span>
+            </div>
+        </div>
+
+        <div style="display: flex; align-items: center; justify-content: space-between; background: #ffffff; padding: 12px; border-radius: 8px; border-left: 4px solid #f59e0b;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <div style="background: #f59e0b; color: white; width: 100px; text-align: center; padding: 4px; border-radius: 4px; font-size: 10px; font-weight: bold;">MENTOR</div>
+                <span style="font-size: 12px; color: #475569;">Auxilia a equipe e ensina colegas.</span>
+            </div>
+            <div style="text-align: right;">
+                <span style="display: block; font-size: 14px; font-weight: bold; color: #d97706;">+ 3,5</span>
+                <span style="font-size: 9px; color: #94a3b8;">PONTOS EXTRA</span>
+            </div>
+        </div>
+
+        <div style="display: flex; align-items: center; justify-content: space-between; background: #ffffff; padding: 12px; border-radius: 8px; border-left: 4px solid #ef4444;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <div style="background: #ef4444; color: white; width: 100px; text-align: center; padding: 4px; border-radius: 4px; font-size: 10px; font-weight: bold;">LIDERANÇA</div>
+                <span style="font-size: 12px; color: #b91c1c; font-weight: 500;">Gestão total e Monitor Cientista.</span>
+            </div>
+            <div style="text-align: right;">
+                <span style="display: block; font-size: 14px; font-weight: bold; color: #b91c1c;">+ 4,5</span>
+                <span style="font-size: 9px; color: #94a3b8;">PONTOS EXTRA</span>
+            </div>
+        </div>
+
+    </div>
+    
+    <div style="margin-top: 15px; font-size: 11px; color: #94a3b8; font-style: italic; text-align: center;">
+        * A pontuação extra é aplicada na média trimestral de Física conforme o nível atingido no fechamento do período.
+    </div>
+</div>
+
+
+    </div>
+</div>
+
+            <div id="screen-avaliacoes" class="screen">
+                <h2>📊 Avaliações e Ranking</h2>
+                <div class="card">
+                    <h3>🔹 Bloco 1 — Avaliações</h3>
+                    <table><thead><tr><th>Monitor</th><th>Mês</th><th>Status</th><th>Ação</th></tr></thead><tbody id="evalTableBody"></tbody></table>
+                </div>
+                <div class="card">
+                    <h3>🔹 Bloco 2 — Ranking Geral</h3>
+
+<table class="ranking-table">
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>Monitor</th>
+      <th>Pontuação</th>
+      <th>Nível</th>
+    </tr>
+  </thead>
+  <tbody id="rankingTableBody"></tbody>
+</table>
+                </div>
+            </div>
+            <div id="screen-tarefas" class="screen">
+    <h2>📝 Minhas Tarefas</h2>
+
+    <button id="btnNovaTarefa" class="btn btn-success hidden"
+        onclick="openTarefaModal()">
+        + Nova Tarefa
+    </button>
+
+    <div id="tarefasLista" class="card" style="margin-top:15px;"></div>
+</div>
+            <div id="screen-admin" class="screen">
+                <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h2>Gerenciar Monitores</h2>
+                    <button class="btn btn-info btn-sm" onclick="exportToExcel()" style="margin:0; width: auto;">📥 Exportar Excel</button>
+                </div>
+                <div class="filter-group">
+                    <input type="text" id="searchAdm" placeholder="Buscar por nome ou CPF..." style="flex: 2;" oninput="renderAdmin()">
+                    <select id="filterTurmaAdm" style="flex: 1;" onchange="renderAdmin()"></select>
+                    <button class="btn btn-success btn-sm" onclick="openAdminModal('create')" style="margin: 0;">+ Novo</button>
+                </div>
+                <div class="card"><table><thead><tr><th>Nome Completo</th><th>Turma</th><th>CPF</th><th>Ações</th></tr></thead><tbody id="adminTable"></tbody></table></div>
+            </div>
+
+            <div id="screen-perfil" class="screen">
+                <h2>Meus Dados</h2>
+                <div class="card">
+                    <div class="form-group"><label>Nome Completo</label><input type="text" id="editNome"></div>
+                    <div class="form-group"><label>CPF</label><input type="text" id="editCPF" readonly style="background: #f0f0f0;"></div>
+                    <div class="form-group"><label>Celular</label><input type="text" id="editCelular"></div>
+                    <div class="form-group"><label>Data de Nascimento</label><input type="date" id="editData"></div>
+                    <div class="form-group"><label>Turma</label><select id="editTurma"></select></div>
+                    <hr style="margin:20px 0; opacity:.3;">
+
+<h4>🔐 Alterar PIN</h4>
+
+<div class="form-group">
+    <label>Novo PIN (4 dígitos)</label>
+    <div class="pin-input-group" id="editPinGroup">
+        <input class="pin-box" maxlength="1">
+        <input class="pin-box" maxlength="1">
+        <input class="pin-box" maxlength="1">
+        <input class="pin-box" maxlength="1">
+    </div>
+</div>
+
+<div class="form-group">
+    <label>Confirmar Novo PIN</label>
+    <div class="pin-input-group" id="confirmPinGroup">
+        <input class="pin-box" maxlength="1">
+        <input class="pin-box" maxlength="1">
+        <input class="pin-box" maxlength="1">
+        <input class="pin-box" maxlength="1">
+    </div>
+</div>
+
+<small style="font-size:11px;color:#64748b;">
+    Preencha apenas se desejar alterar o PIN.
+</small>
+                    <button class="btn btn-success" onclick="updateProfile()">Salvar Alterações</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="clubeModal" class="modal">
+        <div class="modal-content">
+            <h3 id="clubeModalTitle">Cadastrar Clube/Projeto</h3>
+            <input type="hidden" id="editClubeId">
+            <div class="form-group"><label>Nome</label><input type="text" id="clubeNome"></div>
+            <div class="form-group"><label>Descrição</label><textarea id="clubeDesc"></textarea></div>
+            <div class="form-group"><label>Área</label><input type="text" id="clubeArea"></div>
+            <div class="form-group"><label>Selecionar Monitores</label><div id="clubeMonitorChecklist" style="max-height: 150px; overflow-y: auto; border: 1px solid #ddd; padding: 10px;"></div></div>
+            <button class="btn btn-success" onclick="saveClube()">Salvar Clube</button>
+            <button class="link-btn" onclick="document.getElementById('clubeModal').style.display='none'">Cancelar</button>
+        </div>
+    </div>
+
+    <div id="activityModal" class="modal">
+        <div class="modal-content">
+            <h3 id="actModalTitle">Criar Atividade</h3>
+            <input type="hidden" id="actClubeId">
+            <input type="hidden" id="actType">
+            <input type="hidden" id="editActId">
+            <div class="form-group"><label>Título</label><input type="text" id="actTitle"></div>
+            <div class="form-group"><label>Descrição</label><textarea id="actDesc"></textarea></div>
+            <div style="display: flex; gap: 10px;">
+                <div class="form-group" style="flex: 1;"><label>Urgência</label><select id="actUrg"><option value="baixa">Baixa</option><option value="media">Média</option><option value="alta">Alta</option></select></div>
+                <div class="form-group" style="flex: 1;"><label>Deadline</label><input type="date" id="actDeadline"></div>
+            </div>
+<div class="form-group">
+    <label>Destinar atividade para:</label>
+    <select id="actTargetType" onchange="toggleActMonitorSelect()">
+        <option value="ALL">Todos os monitores do clube</option>
+        <option value="SPECIFIC">Monitor específico</option>
+    </select>
+</div>
+<div id="actMonitorSelection" class="form-group hidden">
+    <label>Selecionar Monitor</label>
+    <div id="actMonitorChecklist"
+        style="max-height: 150px; overflow-y:auto; border:1px solid #ddd; padding:10px;">
+    </div>
+</div>
+            <button class="btn btn-success" onclick="saveActivity()">Salvar Atividade</button>
+            <button class="link-btn" onclick="document.getElementById('activityModal').style.display='none'">Cancelar</button>
+        </div>
+    </div>
+
+    <div id="executionModal" class="modal">
+        <div class="modal-content">
+            <h3>Atualizar Atividade</h3>
+            <input type="hidden" id="execActId">
+            <div class="form-group">
+                <label>Status</label>
+                <select id="execStatus">
+                    <option value="PENDENTE">🟡 Pendente</option>
+                    <option value="EM ANDAMENTO">🔵 Em andamento</option>
+                    <option value="CONCLUÍDA">🟢 Concluída</option>
+                </select>
+            </div>
+            <div class="form-group"><label>Resumo da Execução</label><textarea id="execSummary" rows="4"></textarea></div>
+            <button class="btn btn-success" onclick="submitExecution()">Atualizar</button>
+            <button class="link-btn" onclick="document.getElementById('executionModal').style.display='none'">Voltar</button>
+        </div>
+    </div>
+
+<div id="createMonitorModal" class="modal">
+    <div class="modal-content">
+        <h3>Cadastrar Novo Monitor</h3>
+
+        <div class="form-group">
+            <label>Nome Completo</label>
+            <input type="text" id="admRegNome">
+        </div>
+
+        <div style="display:flex; gap:10px;">
+            <div class="form-group" style="flex:1;">
+                <label>CPF</label>
+                <input type="text" id="admRegCPF">
+            </div>
+            <div class="form-group" style="flex:1;">
+                <label>Celular</label>
+                <input type="text" id="admRegCelular">
+            </div>
+        </div>
+
+        <div style="display:flex; gap:10px;">
+            <div class="form-group" style="flex:1;">
+                <label>Data de Nascimento</label>
+                <input type="date" id="admRegData">
+            </div>
+            <div class="form-group" style="flex:1;">
+                <label>Turma</label>
+                <select id="admRegTurma"></select>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>Definir PIN (4 dígitos)</label>
+            <div class="pin-input-group" id="admRegPinGroup">
+    <input class="pin-box" maxlength="1">
+    <input class="pin-box" maxlength="1">
+    <input class="pin-box" maxlength="1">
+    <input class="pin-box" maxlength="1">
+</div>
+</div>
+
+        <button class="btn btn-success" onclick="saveAdminCreatedMonitor()">Criar Monitor</button>
+        <button class="link-btn" onclick="createMonitorModal.style.display='none'">Cancelar</button>
+    </div>
+</div>
+
+    <script>
+const firebaseConfig = {
+          apiKey: "AIzaSyAaomgw31u5y3yoTZ_Iy356R1Hzm3ltgZ8",
+          authDomain: "simon-monitoriadefisica.firebaseapp.com",
+          projectId: "simon-monitoriadefisica",
+          storageBucket: "simon-monitoriadefisica.firebasestorage.app",
+          messagingSenderId: "659521399804",
+          appId: "1:659521399804:web:abd6fdd50442ecc130a079"
+        };
+
+        // Variável global para o Firestore
+        let db = null;
+        let firebaseInitialized = false;
+
+        // Inicializar Firebase
+        function initializeFirebase() {
+            try {
+                // Verificar se as credenciais foram configuradas
+                if (firebaseConfig.apiKey === "COLE_SUA_API_KEY_AQUI" || 
+                    firebaseConfig.projectId === "SEU-PROJETO-ID") {
+                    console.warn("⚠️ FIREBASE NÃO CONFIGURADO!");
+                    console.warn("📝 Você precisa configurar as credenciais do Firebase.");
+                    console.warn("📖 Veja o arquivo USAR_AURORA_FIREBASE.md para instruções.");
+                    
+                    // Modo fallback: usar localStorage
+                    alert("⚠️ ATENÇÃO: Firebase não configurado!\n\n" +
+                          "O sistema vai funcionar localmente, mas os dados NÃO serão compartilhados.\n\n" +
+                          "Para compartilhar dados entre monitores:\n" +
+                          "1. Configure o Firebase (veja USAR_AURORA_FIREBASE.md)\n" +
+                          "2. Cole suas credenciais no código\n\n" +
+                          "Continuando em modo local...");
+                    
+                    firebaseInitialized = false;
+                    return false;
+                }
+                
+                // Inicializar Firebase
+                firebase.initializeApp(firebaseConfig);
+                db = firebase.firestore();
+                firebaseInitialized = true;
+                
+                console.log("✅ Firebase inicializado com sucesso!");
+                console.log("🔥 Projeto:", firebaseConfig.projectId);
+                return true;
+                
+            } catch (error) {
+                console.error("❌ Erro ao inicializar Firebase:", error);
+                
+                alert("❌ ERRO ao inicializar Firebase!\n\n" +
+                      "Possíveis causas:\n" +
+                      "• Credenciais incorretas\n" +
+                      "• Projeto Firebase não existe\n" +
+                      "• Sem conexão com internet\n\n" +
+                      "O sistema vai funcionar em modo local.\n\n" +
+                      "Erro: " + error.message);
+                
+                firebaseInitialized = false;
+                return false;
+            }
+        }
+        
+        // Inicializar Firebase imediatamente
+        initializeFirebase();
+
+// 4. Variáveis de dados
+// Variáveis globais
+let users = {};
+let tarefas = [];
+let atividades = [];
+let currentUser = null;
+
+// Função para carregar dados do Firestore
+async function carregarDados() {
+    try {
+        if (!firebaseInitialized) {
+            // Modo local (localStorage)
+            users = JSON.parse(localStorage.getItem('users') || '{}');
+            tarefas = JSON.parse(localStorage.getItem('tarefas') || '[]');
+            atividades = JSON.parse(localStorage.getItem('atividades') || '[]');
+            
+            // Criar usuário admin padrão se não existir
+            if (Object.keys(users).length === 0) {
+                users['11242860479'] = {
+                    nome: 'Administrador',
+                    cpf: '11242860479',
+                    pin: '0608',
+                    role: 'COORD',
+                    points: 0,
+                    medals: [],
+                    evals: {},
+                    evalData: {}
+                };
+                localStorage.setItem('users', JSON.stringify(users));
+            }
+            return;
+        }
+
+        // Carregar do Firebase
+        const usersSnapshot = await db.collection('users').get();
+        usersSnapshot.forEach(doc => {
+            users[doc.id] = doc.data();
+        });
+
+        const tarefasSnapshot = await db.collection('tarefas').get();
+        tarefasSnapshot.forEach(doc => {
+            tarefas.push({id: doc.id, ...doc.data()});
+        });
+
+        const atividadesSnapshot = await db.collection('atividades').get();
+        atividadesSnapshot.forEach(doc => {
+            atividades.push({id: doc.id, ...doc.data()});
+        });
+
+        // Criar usuário admin padrão se não existir
+        if (Object.keys(users).length === 0) {
+            const adminData = {
+                nome: 'Administrador',
+                cpf: '11242860479',
+                pin: '0608',
+                role: 'COORD',
+                points: 0,
+                medals: [],
+                evals: {},
+                evalData: {}
+            };
+            users['11242860479'] = adminData;
+            await db.collection('users').doc('11242860479').set(adminData);
+        }
+
+    } catch (error) {
+        console.error('Erro ao carregar dados:', error);
+        alert('Erro ao carregar dados. Usando modo local.');
+        users = JSON.parse(localStorage.getItem('users') || '{}');
+        tarefas = JSON.parse(localStorage.getItem('tarefas') || '[]');
+        atividades = JSON.parse(localStorage.getItem('atividades') || '[]');
+    }
+}
+
+// Carregar dados ao iniciar
+carregarDados();
+
+// 6. Função para salvar na nuvem
+window.salvarNaNuvem = async function() {
+    try {
+        if (!firebaseInitialized) {
+            // Modo local
+            localStorage.setItem('users', JSON.stringify(users));
+            localStorage.setItem('tarefas', JSON.stringify(tarefas));
+            localStorage.setItem('atividades', JSON.stringify(atividades));
+            console.log("Dados salvos localmente!");
+            return;
+        }
+
+        // Salvar no Firebase
+        const batch = db.batch();
+
+        // Salvar usuários
+        Object.entries(users).forEach(([cpf, userData]) => {
+            const userRef = db.collection('users').doc(cpf);
+            batch.set(userRef, userData);
+        });
+
+        await batch.commit();
+        console.log("Dados salvos no Firebase!");
+    } catch (error) {
+        console.error("Erro ao salvar:", error);
+        // Fallback para localStorage
+        localStorage.setItem('users', JSON.stringify(users));
+        localStorage.setItem('tarefas', JSON.stringify(tarefas));
+        localStorage.setItem('atividades', JSON.stringify(atividades));
+    }
+}
+
+ const turmasOpcoes = ['1A','1B','1C','1D','1E','1F','2A','2B','2C','2D','2E','2F','3A','3B','3C','3D','3E','3F'];
+ const medalhasConfig = [
+ { id:'leitura', icon:'📚', nome:'Leitura Científica',
+   desc:'Leitura de 3 livros definidos pelo programa, com validação do coordenador' },
+
+ { id:'pesquisa', icon:'🔬', nome:'Pesquisa Científica',
+   desc:'Participação em grupo de pesquisa + produção de 1 artigo ou relatório científico' },
+
+ { id:'tecnica', icon:'🎓', nome:'Formação Técnica',
+   desc:'Conclusão de 1 curso indicado pelo coordenador' },
+
+ { id:'vivencia', icon:'🏭', nome:'Vivência Científica',
+   desc:'Participação em 2 visitas técnicas, com relato reflexivo' },
+
+ { id:'mentor', icon:'🎤', nome:'Mentorias em Física',
+   desc:'Participação em 3 mentorias, oficinas ou apresentações de Física' },
+
+ { id:'olimp', icon:'🏅', nome:'Olimpíadas Científicas',
+   desc:'Participação com medalha ou menção honrosa' },
+
+ { id:'mostra', icon:'🌟', nome:'Mostras Científicas',
+   desc:'Participação em 2 mostras científicas escolares ou externas' }
+];
+        const niveisConfig = [
+            { id: "Iniciante", min: 0, cor: "#10b981" },
+            { id: "Colaborador", min: 10, cor: "#3b82f6" },
+            { id: "Desenvolvedor", min: 20, cor: "#8b5cf6" },
+            { id: "Mentor", min: 30, cor: "#f59e0b" },
+            { id: "Liderança", min: 40, cor: "#ef4444" }
+        ];
+
+
+        // --- SISTEMA DE NAVEGAÇÃO E AUTH ---
+function renderFeedbackMensal() {
+    const grid = document.getElementById("feedbackGrid");
+    if (!grid) return;
+
+    const now = new Date();
+    const mes = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+    const dados = currentUser.evalData?.[mes];
+
+    if (!dados) {
+        grid.innerHTML = "<p style='font-size:12px;color:#64748b;'>Nenhuma avaliação registrada neste mês.</p>";
+        return;
+    }
+
+    const rubricas = {
+        "Responsabilidade": {
+            desc: "Avalia o cumprimento de prazos e compromissos assumidos.",
+            frases: [
+                "❌ Neste mês, houve dificuldades no cumprimento de prazos ou compromissos.",
+                "⚠️ Você cumpriu parte das tarefas, mas ainda precisa melhorar sua organização.",
+                "✅ Excelente! Você cumpriu todos os compromissos com responsabilidade."
+            ]
+        },
+        "Trabalho Coletivo": {
+            desc: "Avalia a colaboração e convivência com o grupo.",
+            frases: [
+                "❌ Houve dificuldades na colaboração com o grupo.",
+                "⚠️ Você colaborou quando solicitado, mas pode se envolver mais.",
+                "✅ Ótima colaboração! Sua postura contribuiu positivamente para o grupo."
+            ]
+        },
+        "Iniciativa": {
+            desc: "Avalia ações realizadas além do que foi solicitado.",
+            frases: [
+                "❌ Não foram observadas iniciativas além das tarefas propostas.",
+                "⚠️ Você demonstrou iniciativa pontual. Continue se arriscando mais.",
+                "✅ Excelente iniciativa! Você propôs e executou ações de forma autônoma."
+            ]
+        },
+        "Projetos": {
+            desc: "Avalia o envolvimento em projetos, clubes ou atividades científicas.",
+            frases: [
+                "❌ Não houve participação em projetos ou clubes neste mês.",
+                "⚠️ Participação pontual. Busque maior continuidade.",
+                "✅ Participação ativa e constante em projetos e clubes."
+            ]
+        },
+        "Comunicação": {
+            desc: "Avalia a clareza ao explicar conceitos de Física.",
+            frases: [
+                "❌ Houve dificuldade em comunicar conceitos científicos.",
+                "⚠️ Explicação com apoio. Continue praticando.",
+                "✅ Comunicação clara e segura. Ótima explicação."
+            ]
+        }
+    };
+
+    grid.innerHTML = Object.entries(dados).map(([nome, nota]) => {
+        const r = rubricas[nome];
+        const cls = nota === 2 ? "fb-good" : nota === 1 ? "fb-mid" : "fb-low";
+
+        return `
+            <div class="feedback-item ${cls}">
+                <b>${nome}</b>
+                <p style="font-size:11px;color:#64748b;">${r.desc}</p>
+                <p>${r.frases[nota]}</p>
+            </div>
+        `;
+    }).join("");
+}
+
+        function toggleAuth(screen) {
+            document.getElementById('loginScreen').style.display = screen === 'login' ? 'flex' : 'none';
+            document.getElementById('registerScreen').style.display = screen === 'register' ? 'flex' : 'none';
+            if(screen === 'register') fillTurmaSelects();
+        }
+
+        function showScreen(screenId) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById('screen-' + screenId).classList.add('active');
+
+    if (screenId === 'admin') renderAdmin();
+    if (screenId === 'admin_clubes') {
+    renderClubes();
+    renderAvulsasAdmin();
+    preencherFiltroAreas();
+}
+    if (screenId === 'avaliacoes') {
+    renderAvaliacoesPendentes();
+    renderRanking();
+}
+// Localize o final da função showScreen e adicione este "if":
+if (screenId === 'perfil') {
+    document.getElementById('editNome').value = currentUser.nome || '';
+    document.getElementById('editCPF').value = currentUser.cpf || '';
+    document.getElementById('editCelular').value = currentUser.celular || '';
+    document.getElementById('editData').value = currentUser.dataNasc || '';
+    document.getElementById('editTurma').value = currentUser.turma || '';
+}
+if (screenId === "tarefas") {
+    renderTarefas();
+}
+}
+function preencherFiltroAreas() {
+    const select = document.getElementById("filterAreaClubes");
+    const areas = [...new Set(clubes.map(c => c.area).filter(Boolean))];
+
+    select.innerHTML =
+        '<option value="">Todas as Áreas</option>' +
+        areas.map(a => `<option value="${a}">${a}</option>`).join('');
+}
+        function startApp() {
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('registerScreen').style.display = 'none';
+            document.getElementById('mainApp').style.display = 'flex';
+            if(currentUser.role === 'COORD') document.getElementById('adminMenu').classList.remove('hidden');
+            fillTurmaSelects();
+            updateDashboard();
+            if (currentUser.role === "COORD") {
+    document.getElementById("btnNovaTarefa").classList.remove("hidden");
+}
+        }
+
+        function logout() { location.reload(); }
+
+        function fillTurmaSelects() {
+           const selects = ['regTurma','editTurma','filterTurmaAdm','admEditTurma','admRegTurma'];
+           selects.forEach(id => {
+              const el = document.getElementById(id);
+              if(!el) return;
+              let html = id === 'filterTurmaAdm' ? '<option value="">Todas as Turmas</option>' : '';
+              html += turmasOpcoes.map(t => `<option value="${t}">${t}</option>`).join('');
+              el.innerHTML = html;
+         });
+        }
+
+        async function handleLogin() {
+    // Garantir que os dados foram carregados
+    await carregarDados();
+    
+    const cpf = document.getElementById('loginCPF').value.replace(/\D/g, '');
+    const pin = Array.from(document.querySelectorAll('#loginPinGroup .pin-box')).map(i => i.value).join('');
+    
+    document.getElementById('loginError').innerText = ''; // Limpar erro anterior
+    
+    if (!cpf || pin.length < 4) {
+        document.getElementById('loginError').innerText = "Preencha CPF e Senha completos!";
+        return;
+    }
+    
+    if (users[cpf] && users[cpf].pin === pin) {
+        currentUser = users[cpf];
+        sessionStorage.setItem('loggedUser', JSON.stringify(currentUser)); 
+        startApp();
+    } else {
+        document.getElementById('loginError').innerText = "CPF ou Senha incorretos.";
+        console.log('Tentativa de login:', cpf, pin); // Debug
+        console.log('Usuários disponíveis:', Object.keys(users)); // Debug
+    }
+}
+
+        function handleRegister() {
+            const cpf = document.getElementById('regCPF').value.replace(/\D/g, '');
+            const pin = Array.from(document.querySelectorAll('#regPinGroup .pin-box')).map(i => i.value).join('');
+            if(!cpf || !pin || pin.length < 4) return alert("Preencha CPF e Senha!");
+            users[cpf] = { nome: document.getElementById('regNome').value, cpf, pin, turma: document.getElementById('regTurma').value, celular: document.getElementById('regCelular').value, dataNasc: document.getElementById('regData').value, points: 0, role: "MON", evals: {}, medals: [], evalData: {} };
+            salvarNaNuvem(); alert("Cadastro realizado!"); location.reload();
+            updateDashboard();
+        }
+
+        // --- GERENCIAR MONITORES (ADMIN) ---
+        function renderAdmin() {
+            const search = document.getElementById('searchAdm').value.toLowerCase();
+            const filter = document.getElementById('filterTurmaAdm').value;
+            const table = document.getElementById('adminTable');
+            
+            const filtered = Object.values(users).filter(u => {
+                const matchName = u.nome.toLowerCase().includes(search) || u.cpf.includes(search);
+                const matchTurma = !filter || u.turma === filter;
+                return u.role === 'MON' && matchName && matchTurma;
+            });
+
+            table.innerHTML = filtered.map(u => `
+                <tr>
+                    <td>${u.nome}</td>
+                    <td>${u.turma || '-'}</td>
+                    <td>${u.cpf}</td>
+                    <td>
+                        <button class="btn-sm btn-warning" onclick="openEditMonitorModal('${u.cpf}')">Editar</button>
+                        <button class="btn-sm btn-danger" onclick="deleteUser('${u.cpf}')">Excluir</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+function deleteUser(cpf) {
+    const cleanCPF = cpf.replace(/\D/g, '');
+    
+    if (!users[cleanCPF]) {
+        alert("Erro: monitor não encontrado.");
+        return;
+    }
+
+    if (!confirm("Tem certeza que deseja excluir este monitor?")) return;
+
+    // CORREÇÃO: Adicionada verificação se 'clubes' existe antes de percorrer
+    if (typeof clubes !== 'undefined' && Array.isArray(clubes)) {
+        clubes.forEach(c => {
+            c.monitores = (c.monitores || []).filter(m => m !== cleanCPF);
+        });
+    }
+
+    // Remove monitor das atividades (com verificação de segurança)
+    if (typeof atividades !== 'undefined' && Array.isArray(atividades)) {
+        atividades.forEach(a => {
+            a.monitores = (a.monitores || []).filter(m => m !== cleanCPF);
+            if (a.execData) delete a.execData[cleanCPF];
+        });
+    }
+
+    // Deleta efetivamente o usuário
+    delete users[cleanCPF];
+
+    // Salva as alterações e atualiza a tela
+    salvarNaNuvem();
+    
+    // Se houver localStorage para clubes e atividades, salve-os também
+    if (typeof clubes !== 'undefined') salvarNaNuvem();
+    if (typeof atividades !== 'undefined') salvarNaNuvem();
+
+    alert("Monitor removido com sucesso!");
+    renderAdmin(); // Recarrega a tabela na tela
+}
+
+function openAdminModal() {
+    fillTurmaSelects();
+    document.getElementById('createMonitorModal').style.display = 'flex';
+}
+
+function openAdminModal() {
+    fillTurmaSelects();
+    document.getElementById('createMonitorModal').style.display = 'flex';
+
+    setTimeout(() => {
+        document.querySelector('#admRegPinGroup .pin-box').focus();
+    }, 100);
+}
+
+function saveAdminCreatedMonitor() {
+    const cpf = document.getElementById('admRegCPF').value.replace(/\D/g,'');
+    const pin = Array.from(document.querySelectorAll('#admRegPinGroup .pin-box'))
+        .map(i => i.value).join('');
+
+    if (!cpf || users[cpf]) {
+        alert("CPF inválido ou já cadastrado.");
+        return;
+    }
+    if (pin.length !== 4) {
+        alert("PIN deve ter 4 dígitos.");
+        return;
+    }
+
+    users[cpf] = {
+        nome: document.getElementById('admRegNome').value,
+        cpf,
+        celular: document.getElementById('admRegCelular').value,
+        dataNasc: document.getElementById('admRegData').value,
+        turma: document.getElementById('admRegTurma').value,
+        pin,
+        role: "MON",
+        points: 0,
+        medals: [],
+        evals: {},
+        evalData: {}
+    };
+
+    salvarNaNuvem();
+
+    document.getElementById('createMonitorModal').style.display = 'none';
+    renderAdmin();
+    updateDashboard();
+    alert("Monitor cadastrado com sucesso!");
+}
+
+function openEditMonitorModal(cpf) {
+    const u = users[cpf];
+
+    fillTurmaSelects();
+
+    document.getElementById('admEditCPF').value = cpf;
+    document.getElementById('admEditCPFView').value = u.cpf;
+    document.getElementById('admEditNome').value = u.nome || '';
+    document.getElementById('admEditCelular').value = u.celular || '';
+    document.getElementById('admEditData').value = u.dataNasc || '';
+    document.getElementById('admEditTurma').value = u.turma || '';
+
+    // 🔑 LIMPA O PIN (segurança)
+    document.querySelectorAll('#admEditPinGroup .pin-box')
+        .forEach(i => i.value = '');
+
+    document.getElementById('editMonitorModal').style.display = 'flex';
+}
+function saveEditedMonitor() {
+    const cpf = document.getElementById('admEditCPF').value;
+
+    users[cpf].nome = document.getElementById('admEditNome').value;
+    users[cpf].celular = document.getElementById('admEditCelular').value;
+    users[cpf].dataNasc = document.getElementById('admEditData').value;
+    users[cpf].turma = document.getElementById('admEditTurma').value;
+
+    // 🔐 PIN (opcional)
+    const newPin = Array.from(
+        document.querySelectorAll('#admEditPinGroup .pin-box')
+    ).map(i => i.value).join('');
+
+    if (newPin.length > 0) {
+        if (newPin.length !== 4) {
+            alert("O novo PIN deve ter 4 dígitos.");
+            return;
+        }
+        users[cpf].pin = newPin;
+    }
+
+    salvarNaNuvem();
+
+    document.getElementById('editMonitorModal').style.display = 'none';
+    renderAdmin();
+    updateDashboard();
+    alert("Dados do monitor atualizados com sucesso!");
+}
+function exportToExcel() {
+
+    const headers = [
+        "Nome Completo",
+        "Turma",
+        "CPF",
+        "Celular",
+        "Data de Nascimento",
+        "PIN",
+        "Pontos",
+        "Medalhas",
+        "Role"
+    ];
+
+    let rows = [headers.join(";")];
+
+    Object.values(users).forEach(u => {
+        if (u.role !== "MON") return;
+
+        rows.push([
+            u.nome ?? "",
+            u.turma ?? "",
+            u.cpf ?? "",
+            u.celular ?? "",
+            u.dataNasc ?? "",
+            u.pin ?? "",
+            u.points ?? 0,
+            (u.medals || []).join(", "),
+            u.role
+        ].join(";"));
+    });
+
+    const csvContent = rows.join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "monitores_export.csv";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+
+    URL.revokeObjectURL(url);
+}
+        // --- DASHBOARD E PERFIL ---
+        function getLevel(pts) {
+            let res = niveisConfig[0];
+            for (let i = niveisConfig.length - 1; i >= 0; i--) { if (pts >= niveisConfig[i].min) { res = niveisConfig[i]; break; } }
+            return { name: res.id, color: res.cor, html: `Seu nível: <span class="level-tag" style="background:${res.cor}">${res.id}</span>` };
+        }
+
+function getNivelIndex(pts) {
+    for (let i = niveisConfig.length - 1; i >= 0; i--) {
+        if (pts >= niveisConfig[i].min) return i;
+    }
+    return 0;
+}
+   function updateDashboard() {
+    const user = users[currentUser.cpf];
+    const adminView = document.getElementById('adminDashContent');
+    const monitorView = document.getElementById('monitorDashContent');
+
+    // VERIFICAÇÃO DE PERMISSÃO
+    if (currentUser.role === 'COORD') {
+        // --- VISÃO DO ADMINISTRADOR ---
+        if(adminView) adminView.classList.remove('hidden');
+        if(monitorView) monitorView.classList.add('hidden');
+        
+        renderAdminStats(); // Esta função será atualizada abaixo
+    } else {
+        // --- VISÃO DO MONITOR (Sua lógica original preservada) ---
+        if(adminView) adminView.classList.add('hidden');
+        if(monitorView) monitorView.classList.remove('hidden');
+
+        const now = new Date();
+        const mesAtual = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+
+        const uMedals = user.medals || [];
+        const ptsMedalhas = Number(uMedals.length) * 5;
+
+        let ptsMes = 0;
+        if (user.evalData && user.evalData[mesAtual]) {
+            ptsMes = Object.values(user.evalData[mesAtual]).reduce((acc, val) => {
+                return acc + Number(val);
+            }, 0);
+        }
+
+        const pontuacaoExibicao = ptsMes + ptsMedalhas;
+
+        document.getElementById('userDisplayName').innerText = user.nome;
+        document.getElementById('pointsMonth').innerText = ptsMes;
+        document.getElementById('pointsMedals').innerText = ptsMedalhas;
+        document.getElementById('userPoints').innerText = pontuacaoExibicao;
+
+        const lvl = getLevel(pontuacaoExibicao);
+        document.getElementById('userLevelBadge').innerHTML = lvl.html;
+        
+        document.getElementById('levelsRoad').innerHTML = niveisConfig.map(n => {
+            const reached = pontuacaoExibicao >= n.min;
+            return `<span class="level-step ${reached ? 'reached' : ''}" style="${reached ? 'background:'+n.cor : ''}">${n.id}</span>`;
+        }).join('');
+
+        const cientistaBanner = document.getElementById("cientistaBanner");
+        if (uMedals.length === 7) {
+            cientistaBanner.style.display = "block";
+        } else {
+            cientistaBanner.style.display = "none";
+        }
+
+        document.getElementById('progressBar').style.width = (uMedals.length / 7 * 100) + "%";
+        document.getElementById('progressText').innerText = `${uMedals.length}/7 Medalhas`;
+
+        document.getElementById('userMedalsDash').innerHTML = medalhasConfig.map(m => `
+            <div class="medal-card ${uMedals.includes(m.id) ? 'unlocked' : 'locked'}" style="min-height: 100px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px;">
+                <span style="font-size:24px;">${m.icon}</span>
+                <b style="font-size:10px; display: block; margin-top: 5px;">${m.nome}</b>
+                <span style="font-size:9px; color: #64748b; margin-top: 4px; line-height: 1.1;">
+                    (${m.desc || ""})
+                </span>
+            </div>
+        `).join('');
+
+        renderFeedbackMensal();
+    }
+}
+
+function renderAdminStats() {
+    const todosMonitores = Object.values(users).filter(u => u.role === 'MON');
+    todosMonitores.forEach(m => {
+    let total = 0;
+
+    if (m.evals) {
+        Object.values(m.evals).forEach(v => total += Number(v));
+    }
+
+    total += (m.medals?.length || 0) * 5;
+    m.points = total;
+});
+    // 1. Preencher Cards Superiores
+    document.getElementById('statTotalMonitores').innerText = todosMonitores.length;
+    
+    // --- NOVO: Lógica de Monitores Destaque Organizada ---
+    // --- NOVA LÓGICA: Monitores Destaque por MAIOR NÍVEL ---
+const elDestaque = document.getElementById('statMonitorDestaque');
+
+if (todosMonitores.length === 0) {
+    elDestaque.innerHTML =
+        `<span style="font-size:12px; color:#94a3b8;">Nenhum monitor cadastrado.</span>`;
+} else {
+
+    // Descobre o MAIOR nível existente
+    const maiorNivelIndex = Math.max(
+        ...todosMonitores.map(m => getNivelIndex(m.points || 0))
+    );
+
+    // Filtra quem está nesse nível
+    const destaques = todosMonitores.filter(
+        m => getNivelIndex(m.points || 0) === maiorNivelIndex
+    );
+
+    if (destaques.length === 0) {
+        elDestaque.innerHTML =
+            `<span style="font-size:12px; color:#94a3b8;">Nenhuma avaliação registrada.</span>`;
+    } else {
+
+        let htmlDestaque = `
+            <table style="width: 100%; margin-top: 5px; border-spacing: 0;">
+                <thead>
+                    <tr style="border-bottom: 1px solid #f1f5f9;">
+                        <th style="text-align:left;font-size:10px;color:#94a3b8;font-weight:600;">
+                            Nome
+                        </th>
+                        <th style="text-align:right;font-size:10px;color:#94a3b8;font-weight:600;">
+                            Nível
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+
+        destaques.forEach(m => {
+            const nivelInfo = getLevel(m.points || 0);
+            const primeiroNome = m.nome.split(' ')[0];
+
+            htmlDestaque += `
+                <tr>
+                    <td style="padding:4px 0;font-size:13px;font-weight:600;color:#1e293b;">
+                        ${primeiroNome}
+                    </td>
+                    <td style="padding:4px 0;text-align:right;">
+                        <span class="level-tag"
+                              style="background:${nivelInfo.color};font-size:10px;">
+                            ${nivelInfo.name}
+                        </span>
+                    </td>
+                </tr>
+            `;
+        });
+
+        htmlDestaque += `</tbody></table>`;
+        elDestaque.innerHTML = htmlDestaque;
+    }
+}
+    // --- Mantendo o recurso de Tarefas ---
+    // ===== TAREFAS / ATIVIDADES ATIVAS =====
+const atividadesAtivas = tarefas.filter(t => t.status !== "CONCLUÍDA");
+document.getElementById('statTarefasAbertas').innerText =
+    atividadesAtivas.length;
+
+// ===== PRAZOS CRÍTICOS =====
+const hoje = new Date();
+
+const atrasadas = tarefas
+    .filter(a =>
+        a.deadline &&
+        new Date(a.deadline) < hoje &&
+        a.status !== "CONCLUÍDA"
+    )
+    .sort((a, b) => new Date(a.deadline) - new Date(b.deadline))
+    .slice(0, 3);
+
+document.getElementById('adminAlerts').innerHTML =
+    atrasadas.length
+        ? atrasadas.map(a => `
+            <div style="padding:10px;border-radius:8px;background:#fff1f2;margin-bottom:10px;border-left:4px solid #f43f5e;">
+                <b>${a.titulo}</b>
+                <div style="font-size:11px;">Prazo: ${a.deadline}</div>
+            </div>
+        `).join('')
+        : "<span style='font-size:12px;color:#94a3b8;'>Nenhum prazo crítico.</span>";
+
+    // --- 3. Mini Ranking do Admin (Mantido) ---
+    const rankingData = [...todosMonitores]
+        .sort((a, b) => (b.points || 0) - (a.points || 0))
+        .slice(0, 5);
+
+    document.getElementById('miniRankingAdmin').innerHTML = rankingData.map(m => `
+        <tr style="border-bottom: 1px solid #f1f5f9;">
+            <td style="padding: 12px 0;">
+                <div style="font-weight: 600; color: #1e293b; font-size: 14px;">${m.nome}</div>
+                <div style="font-size: 11px; color: #64748b;">${m.turma}</div>
+            </td>
+            <td style="text-align: right; font-weight: bold; color: #6366f1;">${m.points || 0} pts</td>
+        </tr>
+    `).join('');
+}
+        function updateProfile() {
+    if (!currentUser) return;
+
+    const cpf = currentUser.cpf;
+
+    // Dados básicos
+    const novoNome = document.getElementById('editNome').value;
+    const novoCelular = document.getElementById('editCelular').value;
+    const novaData = document.getElementById('editData').value;
+    const novaTurma = document.getElementById('editTurma').value;
+
+    if (!novoNome) {
+        alert("O nome não pode ficar vazio!");
+        return;
+    }
+
+    // 🔐 PIN
+    const pin1 = Array.from(
+        document.querySelectorAll('#editPinGroup .pin-box')
+    ).map(i => i.value).join('');
+
+    const pin2 = Array.from(
+        document.querySelectorAll('#confirmPinGroup .pin-box')
+    ).map(i => i.value).join('');
+
+    if (pin1 || pin2) {
+        if (pin1.length !== 4 || pin2.length !== 4) {
+            alert("O PIN deve conter 4 dígitos.");
+            return;
+        }
+        if (pin1 !== pin2) {
+            alert("Os PINs não coincidem.");
+            return;
+        }
+        users[cpf].pin = pin1;
+    }
+
+    // Atualiza dados
+    users[cpf].nome = novoNome;
+    users[cpf].celular = novoCelular;
+    users[cpf].dataNasc = novaData;
+    users[cpf].turma = novaTurma;
+
+    currentUser = users[cpf];
+
+    salvarNaNuvem();
+
+    // Limpa os campos de PIN
+    document.querySelectorAll('#editPinGroup .pin-box, #confirmPinGroup .pin-box')
+        .forEach(i => i.value = '');
+
+    alert("Dados atualizados com sucesso!");
+    updateDashboard();
+}
+        function setupPinInputs(containerId) {
+    const inputs = document.querySelectorAll(`#${containerId} .pin-box`);
+
+    inputs.forEach((input, index) => {
+        input.type = "password";
+        input.inputMode = "numeric";
+        input.maxLength = 1;
+
+        input.addEventListener("input", () => {
+            input.value = input.value.replace(/\D/g, '');
+
+            if (input.value && index < inputs.length - 1) {
+                inputs[index + 1].focus();
+            }
+        });
+
+        input.addEventListener("keydown", (e) => {
+            if (e.key === "Backspace" && !input.value && index > 0) {
+                inputs[index - 1].focus();
+            }
+        });
+    });
+}
+
+function renderAvaliacoesPendentes() {
+    const tbody = document.getElementById("evalTableBody");
+    if (!tbody) return;
+
+    const now = new Date();
+    const mesAtual = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+
+    const monitores = Object.values(users).filter(u => u.role === "MON");
+
+    tbody.innerHTML = monitores.map(u => {
+        const avaliado = u.evalData && u.evalData[mesAtual];
+        const status = avaliado
+            ? `<span class="status-badge done">Realizada</span>`
+            : `<span class="status-badge pending">Pendente</span>`;
+
+        return `
+            <tr>
+                <td>${u.nome}</td>
+                <td>${formatarMes(mesAtual)}</td>
+                <td>${status}</td>
+                <td>
+                    <button class="btn-sm btn-info"
+                        onclick="openAvaliacaoModal('${u.cpf}', '${mesAtual}')">
+                        Avaliar
+                    </button>
+                </td>
+            </tr>
+        `;
+    }).join("");
+}
+
+function openAvaliacaoModal(cpf, mes) {
+    const u = users[cpf];
+
+    document.getElementById("avaliacaoCPF").value = cpf;
+    document.getElementById("avaliacaoMes").value = mes;
+    document.getElementById("avaliacaoTitulo").innerText =
+        `Avaliar ${u.nome} — ${formatarMes(mes)}`;
+
+    // Medalhas
+    document.getElementById("avaliacaoMedalhas").innerHTML =
+medalhasConfig.map(m => `
+    <div style="margin-bottom:10px;">
+        <label style="display: block; cursor: pointer;">
+            <input type="checkbox" class="eval-medal"
+                value="${m.id}"
+                ${(u.medals || []).includes(m.id) ? "checked" : ""}>
+            ${m.icon} <strong>${m.nome}</strong>
+        </label>
+        <div style="font-size:11px; color:#64748b; margin-left:22px; line-height: 1.2;">
+            (${m.desc || ""})
+        </div>
+    </div>
+`).join("");
+
+    document.getElementById("avaliacaoModal").style.display = "flex";
+}
+
+function saveEvaluation() {
+    const cpf = document.getElementById("avaliacaoCPF").value;
+    const mes = document.getElementById("avaliacaoMes").value;
+    const u = users[cpf];
+
+    if (!u) {
+        alert("Erro: Usuário não encontrado.");
+        return;
+    }
+
+    let total = 0;
+    let detalhes = {};
+
+    document.querySelectorAll(".rubrica-score").forEach(s => {
+        const v = parseInt(s.value);
+        total += v;
+        detalhes[s.dataset.name] = v;
+    });
+
+    u.evalData = u.evalData || {};
+    u.evals = u.evals || {};
+
+    u.evalData[mes] = detalhes;
+    u.evals[mes] = total;
+
+    // Medalhas
+    u.medals = Array.from(
+        document.querySelectorAll(".eval-medal:checked")
+    ).map(i => i.value);
+
+    // Recalcula pontos
+    let pontos = 0;
+    Object.values(u.evals).forEach(v => pontos += v);
+    pontos += (u.medals.length * 5);
+    u.points = pontos;
+
+    // 1. Salva os dados primeiro
+    salvarNaNuvem();
+
+    // 2. Fecha o modal
+    document.getElementById("avaliacaoModal").style.display = "none";
+
+    // 3. Tenta atualizar as telas APENAS se elas existirem (Proteção contra erros)
+    if (typeof updateDashboard === "function") { try { updateDashboard(); } catch(e){} }
+    if (typeof renderAvaliacoesPendentes === "function") { try { renderAvaliacoesPendentes(); } catch(e){} }
+    if (typeof renderRanking === "function") { try { renderRanking(); } catch(e){} }
+
+    // 4. Feedback visual garantido
+    alert("✅ Avaliação salva com sucesso!");
+    
+    // 5. Opcional: Recarregar a página para garantir que tudo foi processado
+    // location.reload(); 
+}
+function formatarMes(mes) {
+    const [ano, mesNum] = mes.split("-");
+    const meses = [
+        "Janeiro","Fevereiro","Março","Abril","Maio","Junho",
+        "Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"
+    ];
+    return `${meses[Number(mesNum) - 1]} / ${ano}`;
+}
+
+function renderRanking() {
+    const tbody = document.getElementById("rankingTableBody");
+    if (!tbody) return;
+
+    const now = new Date();
+    const mesAtual = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+
+    const lista = Object.values(users)
+        .filter(u => u.role === "MON")
+        .map(u => {
+            // Pontos do mês atual
+            let ptsMes = 0;
+            if (u.evalData && u.evalData[mesAtual]) {
+                ptsMes = Object.values(u.evalData[mesAtual])
+                    .reduce((acc, v) => acc + Number(v), 0);
+            }
+
+            // Pontos das medalhas
+            const ptsMedalhas = (u.medals || []).length * 5;
+
+            // Total exibido
+            const total = ptsMes + ptsMedalhas;
+
+            return {
+                ...u,
+                ptsMes,
+                ptsMedalhas,
+                total
+            };
+        })
+        // ORDENA PELO TOTAL CORRETO
+        .sort((a, b) => b.total - a.total);
+
+    tbody.innerHTML = lista.map((u, index) => {
+    const lvl = getLevel(u.total);
+    return `
+        <tr>
+            <td class="rank-pos">#${index + 1}</td>
+
+            <td class="rank-name">
+                ${u.nome}<br>
+                <span style="font-size:11px;color:#64748b;">
+                    ${u.turma || ""}
+                </span>
+            </td>
+
+            <td>
+                <div class="rank-points">
+                    <span class="rank-badge badge-mes">
+                        Mensal🗓️ ${u.ptsMes}
+                    </span>
+                    <span class="rank-badge badge-medalha">
+                        Medalhas🏅 ${u.ptsMedalhas}
+                    </span>
+                    <span class="rank-badge badge-total">
+                        Total: ${u.total}
+                    </span>
+                </div>
+            </td>
+
+            <td>
+                <span class="level-tag" style="background:${lvl.color}">
+                    ${lvl.name}
+                </span>
+            </td>
+        </tr>
+    `;
+}).join("");
+}
+function renderMonitorActivities() {
+    const list = document.getElementById('monitorActivitiesList');
+    // Filtra atividades onde o monitor está incluído
+    const minhas = atividades.filter(a => a.monitores.includes(currentUser.cpf));
+    
+    list.innerHTML = minhas.map(a => `
+        <div class="activity-card">
+            <strong>${a.titulo}</strong>
+            <span class="status-badge ${a.status === 'CONCLUÍDA' ? 'done' : 'pending'}">${a.status}</span>
+        </div>
+    `).join('') || "Nenhuma atividade atribuída.";
+}
+function excluirClube(id) {
+    if (!confirm("Deseja excluir este clube/projeto?")) return;
+
+    // Remove atividades ligadas ao clube
+    atividades = atividades.filter(a => a.clubeId != id);
+
+    // Remove o clube
+    clubes = clubes.filter(c => c.id != id);
+
+    salvarNaNuvem();
+
+    renderClubes();
+    renderAvulsasAdmin();
+}
+function openActivityEdit(id) {
+    const a = atividades.find(x => x.id == id);
+    if (!a) return;
+
+    document.getElementById('editActId').value = a.id;
+    document.getElementById('actTitle').value = a.titulo;
+    document.getElementById('actDesc').value = a.desc;
+    document.getElementById('actUrg').value = a.urgencia;
+    document.getElementById('actDeadline').value = a.deadline;
+    document.getElementById('actType').value = a.tipo;
+    document.getElementById('actClubeId').value = a.clubeId;
+
+    document.getElementById('activityModal').style.display = 'flex';
+}
+function toggleActMonitorSelect() {
+    const type = document.getElementById('actTargetType').value;
+    document.getElementById('actMonitorSelection')
+        .classList.toggle('hidden', type !== 'SPECIFIC');
+}
+function renderMonitorActivitiesList() {
+    const list = document.getElementById("monitorActivitiesList");
+    if (!list) return;
+
+    const minhas = atividades.filter(a =>
+        a.monitores.includes(currentUser.cpf)
+    );
+
+    list.innerHTML = minhas.map(a => `
+        <div class="activity-card">
+            <span class="activity-clube-label">
+                ${a.tipo === 'AVULSA'
+                    ? 'Atividade Avulsa'
+                    : clubes.find(c => c.id == a.clubeId)?.nome}
+            </span>
+
+            <b>${a.titulo}</b>
+            <p style="font-size:12px;">${a.desc || ''}</p>
+
+            <button class="btn-sm btn-info"
+    onclick="openExecutionModal(${a.id})">
+    Atualizar Status
+</button>
+        </div>
+    `).join('') || "<p>Nenhuma atividade atribuída.</p>";
+}
+function openExecutionModal(actId) {
+    const a = atividades.find(x => x.id == actId);
+    if (!a) return;
+
+    document.getElementById('execActId').value = actId;
+
+    const exec = a.execData?.[currentUser.cpf];
+
+    document.getElementById('execStatus').value =
+        exec?.status || 'PENDENTE';
+
+    document.getElementById('execSummary').value =
+        exec?.feedback || '';
+
+    document.getElementById('executionModal').style.display = 'flex';
+}
+function submitExecution() {
+    const actId = document.getElementById('execActId').value;
+    const status = document.getElementById('execStatus').value;
+    const feedback = document.getElementById('execSummary').value;
+
+    const a = atividades.find(x => x.id == actId);
+    if (!a) return;
+
+    // Feedback obrigatório se finalizada
+    if (status === 'CONCLUÍDA' && !feedback.trim()) {
+        alert("Ao finalizar a atividade, é obrigatório preencher o feedback.");
+        return;
+    }
+
+    if (!a.execData) a.execData = {};
+
+    a.execData[currentUser.cpf] = {
+        status,
+        feedback,
+        data: new Date().toISOString()
+    };
+
+    // Atualiza status geral (admin visual)
+    a.status = status;
+
+    salvarNaNuvem();
+
+    document.getElementById('executionModal').style.display = 'none';
+
+    renderMonitorActivitiesList();
+    updateDashboard();
+    renderClubes(); // admin vê atualização imediata
+}
+function showSection(sectionId) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    const targetSection = document.getElementById(sectionId);
+    if (targetSection) {
+        targetSection.classList.add('active');
+    }
+
+    // Adicione este bloco para disparar a renderização ao entrar na aba
+    if (sectionId === 'clubes') {
+        renderClubes();
+        if (currentUser.role === 'COORD') {
+            preencherFiltroAreas();
+        }
+    }
+    
+    if (sectionId === 'atividades') renderAtividades();
+    if (sectionId === 'usuarios') renderUsuarios();
+    if (sectionId === 'dashboard') updateDashboard();
+
+    if (window.innerWidth <= 768) {
+        document.getElementById('sidebar').classList.remove('active');
+    }
+}
+function openTarefaModal(id = null) {
+    document.getElementById("tarefaModal").style.display = "flex";
+    document.getElementById("tarefaId").value = id || "";
+
+    const box = document.getElementById("tarefaMonitores");
+box.innerHTML = Object.values(users)
+    .filter(u => u.role === "MON")
+    .map(u => `
+        <label style="display:block;font-size:13px;">
+            <input type="checkbox" value="${u.cpf}">
+            ${u.nome}
+        </label>
+    `).join("");
+
+    if (id) {
+        const t = tarefas.find(t => t.id === id);
+        document.getElementById("tarefaTitulo").value = t.titulo;
+        document.getElementById("tarefaDesc").value = t.desc;
+        document.getElementById("tarefaPrazo").value = t.prazo;
+        document.getElementById("tarefaUrg").value = t.urg;
+        document.querySelectorAll("#tarefaMonitores input").forEach(chk => {
+    if (t.monitores.includes(chk.value)) chk.checked = true;
+});
+    }
+}
+
+function fecharTarefaModal() {
+    document.getElementById("tarefaModal").style.display = "none";
+}
+
+function salvarTarefa() {
+    const id = document.getElementById("tarefaId").value;
+
+    const tarefa = {
+        id: id ? Number(id) : Date.now(),
+        titulo: tarefaTitulo.value,
+        desc: tarefaDesc.value,
+        prazo: tarefaPrazo.value,
+        urg: tarefaUrg.value,
+        monitores: Array.from(
+    document.querySelectorAll("#tarefaMonitores input:checked")
+).map(i => i.value),
+        status: {},
+    };
+    tarefa.monitores.forEach(cpf => {
+    tarefa.status[cpf] = "Pendente";
+});
+
+    if (id) {
+        tarefas = tarefas.map(t => t.id === tarefa.id ? tarefa : t);
+    } else {
+        tarefas.push(tarefa);
+    }
+
+    salvarNaNuvem();
+    fecharTarefaModal();
+    renderTarefas();
+}
+
+function renderTarefas() {
+    const lista = document.getElementById("tarefasLista");
+
+    let visiveis = tarefas;
+    if (currentUser.role === "MON") {
+        visiveis = tarefas.filter(t =>
+            t.monitores.includes(currentUser.cpf)
+        );
+    }
+
+    lista.innerHTML = visiveis.map(t => {
+
+        // URGÊNCIA (cor)
+        const urgClass =
+            t.urg === "Alta" ? "urg-alta" :
+            t.urg === "Média" ? "urg-media" :
+            "urg-baixa";
+
+        // STATUS PARA ADMIN
+        let statusAdmin = "";
+        if (currentUser.role === "COORD") {
+            statusAdmin = `
+                <div style="margin-top:8px;">
+                    <b>Status dos Monitores:</b>
+                    ${t.monitores.map(cpf => `
+                        <div style="font-size:12px;margin-top:3px;">
+                            ${users[cpf]?.nome || cpf} —
+                            ${badgeStatus(t.status[cpf])}
+                        </div>
+                    `).join("")}
+                </div>
+            `;
+        }
+
+        // STATUS PARA MONITOR
+        let statusMonitor = "";
+        if (currentUser.role === "MON") {
+            statusMonitor = `
+                <div style="margin-top:8px;">
+                    <b>Meu status:</b>
+                    ${badgeStatus(t.status[currentUser.cpf])}
+                    <div style="margin-top:5px;">
+                        <select onchange="mudarStatus(${t.id}, this.value)">
+                            <option ${t.status[currentUser.cpf]==="Pendente"?"selected":""}>Pendente</option>
+                            <option ${t.status[currentUser.cpf]==="Em andamento"?"selected":""}>Em andamento</option>
+                            <option ${t.status[currentUser.cpf]==="Concluída"?"selected":""}>Concluída</option>
+                        </select>
+                    </div>
+                </div>
+            `;
+        }
+
+        return `
+            <div class="activity-card">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <b style="font-size:16px;">${t.titulo}</b>
+                    <span class="urgency-tag ${urgClass}">
+                        ${t.urg}
+                    </span>
+                </div>
+
+                <p style="font-size:13px;margin-top:5px;">
+                    ${t.desc}
+                </p>
+
+                <small>
+                    📅 Prazo: <b>${t.prazo}</b>
+                </small>
+
+                ${statusAdmin}
+                ${statusMonitor}
+
+                ${currentUser.role === "COORD" ? `
+                    <div style="margin-top:10px;">
+                        <button class="btn-sm btn-warning"
+                            onclick="openTarefaModal(${t.id})">
+                            Editar
+                        </button>
+                        <button class="btn-sm btn-danger"
+                            onclick="excluirTarefa(${t.id})">
+                            Excluir
+                        </button>
+                    </div>
+                ` : ""}
+            </div>
+        `;
+    }).join("") || "<p>Nenhuma tarefa cadastrada.</p>";
+    updateDashboard();
+}
+
+function mudarStatus(id, status) {
+    const tarefa = tarefas.find(t => t.id === id);
+    if (!tarefa) return;
+
+    tarefa.status[currentUser.cpf] = status;
+
+    salvarNaNuvem();
+
+    // 🔄 ATUALIZA A TELA NA HORA
+    renderTarefas();
+}
+
+function excluirTarefa(id) {
+    if (!confirm("Excluir tarefa?")) return;
+    tarefas = tarefas.filter(t => t.id !== id);
+    salvarNaNuvem();
+    renderTarefas();
+}
+
+function badgeStatus(status) {
+    if (status === "Concluída") return `<span class="status-badge done">Concluída</span>`;
+    if (status === "Em andamento") return `<span class="status-badge in-progress">Em andamento</span>`;
+    return `<span class="status-badge pending">Pendente</span>`;
+}
+
+// PINs do login
+// Configurar PINs após carregar o DOM
+document.addEventListener('DOMContentLoaded', () => {
+    setupPinInputs("loginPinGroup");
+    setupPinInputs("regPinGroup");
+    setupPinInputs("admRegPinGroup");
+    setupPinInputs("admEditPinGroup");
+    setupPinInputs("editPinGroup");
+    setupPinInputs("confirmPinGroup");
+});
+
+// PINs do cadastro público
+setupPinInputs("regPinGroup");
+
+// PINs do cadastro via admin
+setupPinInputs("admRegPinGroup");
+
+setupPinInputs("admEditPinGroup");
+setupPinInputs("editPinGroup");
+setupPinInputs("confirmPinGroup");
+window.addEventListener("storage", (e) => {
+    if (e.key === "monitoria_tarefas") {
+        tarefas = JSON.parse(e.newValue || "[]");
+        renderTarefas();
+    }
+});
+
+// Isso faz com que os botões "onclick" do HTML consigam enxergar as funções
+window.handleLogin = handleLogin;
+window.handleRegister = handleRegister;
+window.showScreen = showScreen;
+window.saveEvaluation = saveEvaluation;
+window.openAdminModal = openAdminModal;
+window.openTarefaModal = openTarefaModal;
+window.logout = logout;
+window.saveTarefa = saveTarefa;
+// Se tiver mais funções chamadas por botões, adicione aqui seguindo o padrão
+
+// Verificar se há sessão ativa ao carregar a página
+// Verificar se há sessão ativa ao carregar a página
+window.addEventListener('DOMContentLoaded', async () => {
+    console.log('🚀 Iniciando aplicação...');
+    
+    // Aguardar carregamento dos dados
+    await carregarDados();
+    
+    console.log('📦 Dados carregados:', {
+        totalUsers: Object.keys(users).length,
+        users: Object.keys(users)
+    });
+    
+    // Verificar sessão salva
+    const savedUser = sessionStorage.getItem('loggedUser');
+    if (savedUser) {
+        try {
+            currentUser = JSON.parse(savedUser);
+            if (users[currentUser.cpf]) {
+                currentUser = users[currentUser.cpf];
+                console.log('✅ Sessão restaurada:', currentUser.nome);
+                startApp();
+            } else {
+                console.log('⚠️ Usuário da sessão não existe mais');
+                sessionStorage.removeItem('loggedUser');
+            }
+        } catch (e) {
+            console.error('❌ Erro ao restaurar sessão:', e);
+            sessionStorage.removeItem('loggedUser');
+        }
+    }
+    
+    // Configurar PINs após tudo carregar
+    setTimeout(() => {
+        setupPinInputs("loginPinGroup");
+        setupPinInputs("regPinGroup");
+        setupPinInputs("admRegPinGroup");
+        setupPinInputs("admEditPinGroup");
+        setupPinInputs("editPinGroup");
+        setupPinInputs("confirmPinGroup");
+    }, 100);
+});
+    </script>
+
+<div id="editMonitorModal" class="modal">
+    <div class="modal-content">
+        <h3>Editar Monitor</h3>
+
+        <input type="hidden" id="admEditCPF">
+
+        <div class="form-group">
+            <label>CPF</label>
+            <input type="text" id="admEditCPFView" readonly style="background:#f0f0f0;">
+        </div>
+
+        <div class="form-group">
+            <label>Nome Completo</label>
+            <input type="text" id="admEditNome">
+        </div>
+
+        <div class="form-group">
+            <label>Celular</label>
+            <input type="text" id="admEditCelular">
+        </div>
+
+        <div class="form-group">
+            <label>Data de Nascimento</label>
+            <input type="date" id="admEditData">
+        </div>
+
+        <div class="form-group">
+            <label>Turma</label>
+            <select id="admEditTurma"></select>
+        </div>
+
+        <div class="form-group">
+    <label>Redefinir PIN (opcional)</label>
+    <div class="pin-input-group" id="admEditPinGroup">
+        <input class="pin-box" maxlength="1">
+        <input class="pin-box" maxlength="1">
+        <input class="pin-box" maxlength="1">
+        <input class="pin-box" maxlength="1">
+    </div>
+    <small style="font-size:11px;color:#64748b;">
+        Preencha apenas se desejar alterar o PIN
+    </small>
+</div>
+
+        <button class="btn btn-success" onclick="saveEditedMonitor()">
+            Salvar Alterações
+        </button>
+
+        <button class="link-btn"
+            onclick="document.getElementById('editMonitorModal').style.display='none'">
+            Cancelar
+        </button>
+    </div>
+</div>
+<div id="avaliacaoModal" class="modal">
+    <div class="modal-content">
+        <h3 id="avaliacaoTitulo">Avaliar Monitor</h3>
+        <input type="hidden" id="avaliacaoCPF">
+        <input type="hidden" id="avaliacaoMes">
+
+        <div class="rubrica-box">
+            <h4>Rubricas</h4>
+
+            <div class="form-group">
+                <label>Responsabilidade</label>
+                <select class="rubrica-score" data-name="Responsabilidade">
+                    <option value="0">0</option>
+                    <option value="1">1</option>
+                    <option value="2" selected>2</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Trabalho Coletivo</label>
+                <select class="rubrica-score" data-name="Trabalho Coletivo">
+                    <option value="0">0</option>
+                    <option value="1">1</option>
+                    <option value="2" selected>2</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Iniciativa</label>
+                <select class="rubrica-score" data-name="Iniciativa">
+                    <option value="0">0</option>
+                    <option value="1">1</option>
+                    <option value="2" selected>2</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Comunicação</label>
+                <select class="rubrica-score" data-name="Comunicação">
+                    <option value="0">0</option>
+                    <option value="1">1</option>
+                    <option value="2" selected>2</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Projetos</label>
+                <select class="rubrica-score" data-name="Projetos">
+                    <option value="0">0</option>
+                    <option value="1">1</option>
+                    <option value="2" selected>2</option>
+                </select>
+            </div>
+        </div>
+
+        <h4>🏅 Medalhas</h4>
+        <div id="avaliacaoMedalhas"></div>
+
+        <button class="btn btn-success" onclick="saveEvaluation()">Salvar Avaliação</button>
+        <button class="link-btn" onclick="avaliacaoModal.style.display='none'">Cancelar</button>
+    </div>
+</div>
+<div id="tarefaModal" class="modal">
+  <div class="modal-content">
+    <h3>Tarefa</h3>
+
+    <input type="hidden" id="tarefaId">
+
+    <div class="form-group">
+      <label>Título</label>
+      <input type="text" id="tarefaTitulo">
+    </div>
+
+    <div class="form-group">
+      <label>Descrição</label>
+      <textarea id="tarefaDesc"></textarea>
+    </div>
+
+    <div class="form-group">
+      <label>Prazo</label>
+      <input type="date" id="tarefaPrazo">
+    </div>
+
+    <div class="form-group">
+      <label>Urgência</label>
+      <select id="tarefaUrg">
+        <option value="Baixa">Baixa</option>
+        <option value="Média">Média</option>
+        <option value="Alta">Alta</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>Monitor responsável</label>
+      <div id="tarefaMonitores"></div>
+    </div>
+
+    <button class="btn btn-success" onclick="salvarTarefa()">Salvar</button>
+    <button class="link-btn" onclick="fecharTarefaModal()">Cancelar</button>
+  </div>
+</div>
+</body>
+</html>
