@@ -935,6 +935,7 @@ async function saveTarefa() {
     const prazo = document.getElementById('tarefaPrazo').value;
     const urg = document.getElementById('tarefaUrg').value;
     
+    // Pega os CPFs dos monitores selecionados
     const selecionados = Array.from(document.querySelectorAll('#tarefaMonitores input:checked'))
                               .map(cb => cb.value);
 
@@ -943,6 +944,7 @@ async function saveTarefa() {
         return;
     }
 
+    // Cria o objeto de status para cada monitor
     const statusObj = {};
     selecionados.forEach(cpf => {
         statusObj[cpf] = "Pendente";
@@ -954,7 +956,7 @@ async function saveTarefa() {
         desc: desc,
         prazo: prazo,
         urg: urg,
-        monitores: selecionados,
+        monitores: selecionados, // Lista de CPFs (muito importante para o filtro)
         status: statusObj
     };
 
@@ -963,13 +965,16 @@ async function saveTarefa() {
             await db.collection('tarefas').doc(id.toString()).set(novaTarefa);
         }
         
-        alert("Tarefa salva!");
+        // Atualiza a memória local
+        tarefas = tarefas.filter(t => t.id != id);
+        tarefas.push(novaTarefa);
+
+        alert("Sucesso! Tarefa salva e enviada aos monitores.");
         document.getElementById('tarefaModal').style.display = 'none';
-        
-        // Recarrega os dados do Firebase para garantir sincronia
-        await carregarDados(); 
+        renderTarefas();
     } catch (e) {
-        alert("Erro ao salvar.");
+        console.error(e);
+        alert("Erro ao gravar no Firebase.");
     }
 }
 
@@ -2053,62 +2058,70 @@ function salvarTarefa() {
 
 function renderTarefas() {
     const lista = document.getElementById("tarefasLista");
-    if (!lista || !currentUser) return; // Segurança contra o erro 'null'
+    if (!lista || !currentUser) return; // Se não houver utilizador logado, não faz nada
 
     lista.innerHTML = '';
 
-    // Filtro: Admin vê tudo, Monitor vê apenas onde o CPF dele está incluído
-    let visiveis = (currentUser.role === "COORD") 
+    // Filtro: Se for monitor, só vê se o CPF dele estiver na lista 'monitores'
+    const visiveis = (currentUser.role === "COORD") 
         ? tarefas 
         : tarefas.filter(t => t.monitores && t.monitores.includes(currentUser.cpf));
 
     if (visiveis.length === 0) {
-        lista.innerHTML = "<p style='text-align:center; padding:20px;'>Nenhuma tarefa encontrada.</p>";
+        lista.innerHTML = "<p style='text-align:center; padding:20px;'>Nenhuma tarefa atribuída.</p>";
         return;
     }
 
     lista.innerHTML = visiveis.map(t => {
-        const urgClass = t.urg === "Alta" ? "urg-alta" : t.urg === "Média" ? "urg-media" : "urg-baixa";
-        
-        // Status individual para Monitores
-        let statusHtml = "";
-        if (currentUser.role === "MON") {
-            const meuStatus = (t.status && t.status[currentUser.cpf]) ? t.status[currentUser.cpf] : "Pendente";
-            statusHtml = `
-                <div style="margin-top:10px;">
-                    <b>Status:</b> <span class="status-badge">${meuStatus}</span>
-                    <select onchange="mudarStatus('${t.id}', this.value)" style="margin-top:5px; width:100%;">
-                        <option value="Pendente" ${meuStatus==="Pendente"?"selected":""}>Pendente</option>
-                        <option value="Em andamento" ${meuStatus==="Em andamento"?"selected":""}>Em andamento</option>
-                        <option value="Concluída" ${meuStatus==="Concluída"?"selected":""}>Concluída</option>
-                    </select>
-                </div>`;
-        } else {
-            // Visão do Coordenador
-            statusHtml = `<div style="margin-top:10px; font-size:12px; background:#f8fafc; padding:5px; border-radius:5px;">
-                <b>Monitoramento:</b><br>
-                ${t.monitores.map(cpf => `• ${users[cpf]?.nome || 'Monitor'}: ${t.status ? t.status[cpf] : 'Pendente'}`).join('<br>')}
-            </div>`;
-        }
-
+        const meuStatus = (t.status && t.status[currentUser.cpf]) ? t.status[currentUser.cpf] : "Pendente";
         return `
             <div class="activity-card">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <b style="font-size:16px;">${t.titulo}</b>
-                    <span class="urgency-tag ${urgClass}">${t.urg}</span>
+                <b>${t.titulo}</b>
+                <p>${t.desc}</p>
+                <small>Prazo: ${t.prazo}</small>
+                <div style="margin-top:10px;">
+                    ${currentUser.role === 'MON' ? 
+                        `Status: <b>${meuStatus}</b>` : 
+                        `Responsáveis: ${t.monitores.length} monitores`
+                    }
                 </div>
-                <p style="font-size:13px; margin: 8px 0; color: #475569;">${t.desc}</p>
-                <small>📅 Prazo: <b>${t.prazo}</b></small>
-                ${statusHtml}
-                ${currentUser.role === "COORD" ? `
-                    <div style="margin-top:10px; display:flex; gap:5px;">
-                        <button class="btn-sm btn-warning" onclick="openTarefaModal('${t.id}')" style="flex:1;">Editar</button>
-                        <button class="btn-sm btn-danger" onclick="excluirTarefa('${t.id}')" style="flex:1;">Excluir</button>
-                    </div>` : ""}
             </div>`;
     }).join("");
 }
+function login() {
+    // Remove tudo que não é número do CPF digitado
+    const cpfInput = document.getElementById('loginCpf').value.replace(/\D/g, '');
+    const senhaInput = document.getElementById('loginPassword').value;
 
+    if (!users || Object.keys(users).length === 0) {
+        alert("Erro: Lista de utilizadores ainda não carregada. Aguarde um segundo e tente novamente.");
+        return;
+    }
+
+    // Procura o utilizador comparando apenas os números do CPF
+    const user = Object.values(users).find(u => {
+        const userCpf = u.cpf.replace(/\D/g, '');
+        return userCpf === cpfInput && u.senha === senhaInput;
+    });
+
+    if (user) {
+        currentUser = user;
+        localStorage.setItem('currentUser', JSON.stringify(user));
+        document.getElementById('authScreen').style.display = 'none';
+        document.getElementById('appScreen').style.display = 'flex';
+        
+        // Configura permissões
+        if (user.role === 'COORD') {
+            document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'block');
+            showSection('dashboard');
+        } else {
+            document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
+            showSection('tarefas'); // Monitor vai direto para tarefas
+        }
+    } else {
+        alert('CPF ou Senha incorretos. Verifique se o utilizador está cadastrado.');
+    }
+}
 function mudarStatus(id, status) {
     const tarefa = tarefas.find(t => t.id === id);
     if (!tarefa) return;
