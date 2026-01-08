@@ -935,7 +935,6 @@ async function saveTarefa() {
     const prazo = document.getElementById('tarefaPrazo').value;
     const urg = document.getElementById('tarefaUrg').value;
     
-    // Pega os monitores selecionados
     const selecionados = Array.from(document.querySelectorAll('#tarefaMonitores input:checked'))
                               .map(cb => cb.value);
 
@@ -944,12 +943,9 @@ async function saveTarefa() {
         return;
     }
 
-    // Cria o objeto de status: { "cpf1": "Pendente", "cpf2": "Pendente" }
     const statusObj = {};
     selecionados.forEach(cpf => {
-        // Se estiver editando, tenta manter o status que já existia, senão coloca Pendente
-        const tarefaExistente = tarefas.find(t => t.id == id);
-        statusObj[cpf] = (tarefaExistente && tarefaExistente.status[cpf]) ? tarefaExistente.status[cpf] : "Pendente";
+        statusObj[cpf] = "Pendente";
     });
 
     const novaTarefa = {
@@ -957,9 +953,9 @@ async function saveTarefa() {
         titulo: titulo,
         desc: desc,
         prazo: prazo,
-        urg: urg, // Note que usei 'urg' para bater com seu renderTarefas
+        urg: urg,
         monitores: selecionados,
-        status: statusObj // Agora é um objeto mapeado por CPF
+        status: statusObj
     };
 
     try {
@@ -967,19 +963,13 @@ async function saveTarefa() {
             await db.collection('tarefas').doc(id.toString()).set(novaTarefa);
         }
         
-        // Atualiza a lista local
-        tarefas = tarefas.filter(t => t.id != id);
-        tarefas.push(novaTarefa);
-        localStorage.setItem('tarefas', JSON.stringify(tarefas));
-
-        document.getElementById('tarefaModal').style.display = 'none';
         alert("Tarefa salva!");
+        document.getElementById('tarefaModal').style.display = 'none';
         
-        renderTarefas();
-        if(currentUser.role === 'COORD') renderAdminDash();
-    } catch (error) {
-        console.error(error);
-        alert("Erro ao salvar no Firebase.");
+        // Recarrega os dados do Firebase para garantir sincronia
+        await carregarDados(); 
+    } catch (e) {
+        alert("Erro ao salvar.");
     }
 }
 
@@ -1982,13 +1972,15 @@ function submitExecution() {
     renderClubes(); // admin vê atualização imediata
 }
 function showSection(sectionId) {
+    if (!currentUser) return; // Impede o erro se não houver usuário
+
     document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
     const targetSection = document.getElementById(sectionId);
     if (targetSection) {
         targetSection.classList.add('active');
     }
 
-    // Unificamos tudo para renderTarefas
+    // Unificado para Tarefas
     if (sectionId === 'tarefas' || sectionId === 'atividades') {
         renderTarefas();
     }
@@ -2060,42 +2052,61 @@ function salvarTarefa() {
 }
 
 function renderTarefas() {
-    const lista = document.getElementById('tarefasLista'); // Verifique se o ID no HTML é este
-    if (!lista) return;
+    const lista = document.getElementById("tarefasLista");
+    if (!lista || !currentUser) return; // Segurança contra o erro 'null'
+
     lista.innerHTML = '';
 
-    // FILTRO: Admin vê todas, Monitor vê apenas as que ele está incluído
-    const tarefasVisiveis = currentUser.role === 'COORD' 
+    // Filtro: Admin vê tudo, Monitor vê apenas onde o CPF dele está incluído
+    let visiveis = (currentUser.role === "COORD") 
         ? tarefas 
         : tarefas.filter(t => t.monitores && t.monitores.includes(currentUser.cpf));
 
-    if (tarefasVisiveis.length === 0) {
-        lista.innerHTML = '<p style="text-align:center; padding:20px;">Nenhuma tarefa encontrada.</p>';
+    if (visiveis.length === 0) {
+        lista.innerHTML = "<p style='text-align:center; padding:20px;'>Nenhuma tarefa encontrada.</p>";
         return;
     }
 
-    tarefasVisiveis.forEach(t => {
-        const meuStatus = t.status[currentUser.cpf] || "PENDENTE";
-        const card = document.createElement('div');
-        card.className = 'activity-card';
-        card.innerHTML = `
-            <div style="display:flex; justify-content:space-between;">
-                <span class="urgency-tag urg-${t.urg.toLowerCase()}">${t.urg}</span>
-                <span class="status-badge">${currentUser.role === 'COORD' ? 'PAINEL' : meuStatus}</span>
-            </div>
-            <h4>${t.titulo}</h4>
-            <p>${t.desc}</p>
-            <small>📅 Prazo: ${t.prazo}</small>
-            ${currentUser.role === 'MON' ? `
-                <select onchange="atualizarMeuStatus('${t.id}', this.value)" style="margin-top:10px; width:100%;">
-                    <option value="PENDENTE" ${meuStatus === 'PENDENTE' ? 'selected' : ''}>Pendente</option>
-                    <option value="EM ANDAMENTO" ${meuStatus === 'EM ANDAMENTO' ? 'selected' : ''}>Em andamento</option>
-                    <option value="CONCLUÍDA" ${meuStatus === 'CONCLUÍDA' ? 'selected' : ''}>Concluída</option>
-                </select>
-            ` : ''}
-        `;
-        lista.appendChild(card);
-    });
+    lista.innerHTML = visiveis.map(t => {
+        const urgClass = t.urg === "Alta" ? "urg-alta" : t.urg === "Média" ? "urg-media" : "urg-baixa";
+        
+        // Status individual para Monitores
+        let statusHtml = "";
+        if (currentUser.role === "MON") {
+            const meuStatus = (t.status && t.status[currentUser.cpf]) ? t.status[currentUser.cpf] : "Pendente";
+            statusHtml = `
+                <div style="margin-top:10px;">
+                    <b>Status:</b> <span class="status-badge">${meuStatus}</span>
+                    <select onchange="mudarStatus('${t.id}', this.value)" style="margin-top:5px; width:100%;">
+                        <option value="Pendente" ${meuStatus==="Pendente"?"selected":""}>Pendente</option>
+                        <option value="Em andamento" ${meuStatus==="Em andamento"?"selected":""}>Em andamento</option>
+                        <option value="Concluída" ${meuStatus==="Concluída"?"selected":""}>Concluída</option>
+                    </select>
+                </div>`;
+        } else {
+            // Visão do Coordenador
+            statusHtml = `<div style="margin-top:10px; font-size:12px; background:#f8fafc; padding:5px; border-radius:5px;">
+                <b>Monitoramento:</b><br>
+                ${t.monitores.map(cpf => `• ${users[cpf]?.nome || 'Monitor'}: ${t.status ? t.status[cpf] : 'Pendente'}`).join('<br>')}
+            </div>`;
+        }
+
+        return `
+            <div class="activity-card">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <b style="font-size:16px;">${t.titulo}</b>
+                    <span class="urgency-tag ${urgClass}">${t.urg}</span>
+                </div>
+                <p style="font-size:13px; margin: 8px 0; color: #475569;">${t.desc}</p>
+                <small>📅 Prazo: <b>${t.prazo}</b></small>
+                ${statusHtml}
+                ${currentUser.role === "COORD" ? `
+                    <div style="margin-top:10px; display:flex; gap:5px;">
+                        <button class="btn-sm btn-warning" onclick="openTarefaModal('${t.id}')" style="flex:1;">Editar</button>
+                        <button class="btn-sm btn-danger" onclick="excluirTarefa('${t.id}')" style="flex:1;">Excluir</button>
+                    </div>` : ""}
+            </div>`;
+    }).join("");
 }
 
 function mudarStatus(id, status) {
