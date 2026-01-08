@@ -751,6 +751,57 @@ let currentUser = null;
 
 // Função para carregar dados do Firestore
 async function carregarDados() {
+    if (!firebaseInitialized) {
+        console.error("Firebase não inicializado.");
+        return;
+    }
+
+    try {
+        const usersSnap = await db.collection('users').get();
+        
+        if (usersSnap.empty) {
+            console.error("ALERTA: A coleção 'users' está VAZIA no Firebase!");
+            alert("Atenção: Nenhum usuário encontrado no banco de dados.");
+        }
+
+        users = {};
+        usersSnap.forEach(doc => {
+            users[doc.id] = doc.data();
+        });
+
+        console.log("Usuários carregados com sucesso:", Object.keys(users));
+
+        // Carregar Tarefas
+        const tarefasSnap = await db.collection('tarefas').get();
+        tarefas = [];
+        tarefasSnap.forEach(doc => {
+            tarefas.push(doc.data());
+        });
+
+        renderTarefas();
+    } catch (e) {
+        console.error("Erro crítico ao carregar dados do Firebase:", e);
+    }
+}
+async function criarMeuUsuario() {
+    if (!firebaseInitialized) return;
+    const admin = {
+        cpf: "11242860479",
+        nome: "Administrador",
+        senha: "0608",
+        role: "COORD"
+    };
+    try {
+        await db.collection('users').doc(admin.cpf).set(admin);
+        console.log("Usuário criado com sucesso no Firebase!");
+        alert("Usuário Mestre Criado! Tente logar agora.");
+    } catch (e) {
+        console.error("Erro ao criar usuário:", e);
+    }
+}
+// Chame a função uma única vez para testar:
+setTimeout(criarMeuUsuario, 2000);
+async function carregarDados() {
     try {
         if (!firebaseInitialized) {
             // Modo local (localStorage)
