@@ -584,7 +584,20 @@
         </div>
     </div>
 
-        <div id="activityModal" class="modal">
+    <div id="clubeModal" class="modal">
+        <div class="modal-content">
+            <h3 id="clubeModalTitle">Cadastrar Clube/Projeto</h3>
+            <input type="hidden" id="editClubeId">
+            <div class="form-group"><label>Nome</label><input type="text" id="clubeNome"></div>
+            <div class="form-group"><label>Descrição</label><textarea id="clubeDesc"></textarea></div>
+            <div class="form-group"><label>Área</label><input type="text" id="clubeArea"></div>
+            <div class="form-group"><label>Selecionar Monitores</label><div id="clubeMonitorChecklist" style="max-height: 150px; overflow-y: auto; border: 1px solid #ddd; padding: 10px;"></div></div>
+            <button class="btn btn-success" onclick="saveClube()">Salvar Clube</button>
+            <button class="link-btn" onclick="document.getElementById('clubeModal').style.display='none'">Cancelar</button>
+        </div>
+    </div>
+
+    <div id="activityModal" class="modal">
         <div class="modal-content">
             <h3 id="actModalTitle">Criar Atividade</h3>
             <input type="hidden" id="actClubeId">
@@ -751,57 +764,6 @@ let currentUser = null;
 
 // Função para carregar dados do Firestore
 async function carregarDados() {
-    if (!firebaseInitialized) {
-        console.error("Firebase não inicializado.");
-        return;
-    }
-
-    try {
-        const usersSnap = await db.collection('users').get();
-        
-        if (usersSnap.empty) {
-            console.error("ALERTA: A coleção 'users' está VAZIA no Firebase!");
-            alert("Atenção: Nenhum usuário encontrado no banco de dados.");
-        }
-
-        users = {};
-        usersSnap.forEach(doc => {
-            users[doc.id] = doc.data();
-        });
-
-        console.log("Usuários carregados com sucesso:", Object.keys(users));
-
-        // Carregar Tarefas
-        const tarefasSnap = await db.collection('tarefas').get();
-        tarefas = [];
-        tarefasSnap.forEach(doc => {
-            tarefas.push(doc.data());
-        });
-
-        renderTarefas();
-    } catch (e) {
-        console.error("Erro crítico ao carregar dados do Firebase:", e);
-    }
-}
-async function criarMeuUsuario() {
-    if (!firebaseInitialized) return;
-    const admin = {
-        cpf: "11242860479",
-        nome: "Administrador",
-        senha: "0608",
-        role: "COORD"
-    };
-    try {
-        await db.collection('users').doc(admin.cpf).set(admin);
-        console.log("Usuário criado com sucesso no Firebase!");
-        alert("Usuário Mestre Criado! Tente logar agora.");
-    } catch (e) {
-        console.error("Erro ao criar usuário:", e);
-    }
-}
-// Chame a função uma única vez para testar:
-setTimeout(criarMeuUsuario, 2000);
-async function carregarDados() {
     try {
         if (!firebaseInitialized) {
             // Modo local (localStorage)
@@ -866,38 +828,10 @@ async function carregarDados() {
         atividades = JSON.parse(localStorage.getItem('atividades') || '[]');
     }
 }
-async function carregarDados() {
-    if (!firebaseInitialized) return;
 
-    try {
-        // ... (outras coleções como users)
-        
-        // Buscar Tarefas
-        const tarefaSnap = await db.collection('tarefas').get();
-        tarefas = [];
-        tarefaSnap.forEach(doc => {
-            tarefas.push(doc.data());
-        });
-
-        renderTarefas();
-    } catch (e) {
-        console.error("Erro ao carregar:", e);
-    }
-}
 // Carregar dados ao iniciar
 carregarDados();
 
-async function salvarNaNuvem() {
-    // Salva no LocalStorage para backup rápido
-    localStorage.setItem('tarefas', JSON.stringify(tarefas));
-
-    // Salva no Firebase cada tarefa
-    if (firebaseInitialized) {
-        for (const t of tarefas) {
-            await db.collection('tarefas').doc(t.id.toString()).set(t);
-        }
-    }
-}
 // 6. Função para salvar na nuvem
 window.salvarNaNuvem = async function() {
     try {
@@ -927,105 +861,6 @@ window.salvarNaNuvem = async function() {
         localStorage.setItem('users', JSON.stringify(users));
         localStorage.setItem('tarefas', JSON.stringify(tarefas));
         localStorage.setItem('atividades', JSON.stringify(atividades));
-    }
-}
-async function saveActivity() { // ou saveTarefa, certifique-se de que o botão no HTML chame este nome
-    const id = document.getElementById('editActId').value || Date.now().toString();
-    const titulo = document.getElementById('actTitle').value;
-    const desc = document.getElementById('actDesc').value;
-    const urg = document.getElementById('actUrg').value;
-    const prazo = document.getElementById('actDeadline').value;
-    
-    // Captura os monitores selecionados no modal
-    const selecionados = Array.from(document.querySelectorAll('#actMonitorChecklist input:checked'))
-                              .map(cb => cb.value);
-
-    if (selecionados.length === 0) {
-        alert("Selecione pelo menos um monitor!");
-        return;
-    }
-
-    // Criar o objeto de status individual para cada monitor selecionado
-    const statusObj = {};
-    selecionados.forEach(cpf => {
-        statusObj[cpf] = "PENDENTE"; 
-    });
-
-    const novaTarefa = {
-        id: id,
-        titulo: titulo,
-        desc: desc,
-        urg: urg,
-        prazo: prazo,
-        monitores: selecionados, // Array de CPFs
-        status: statusObj,       // Objeto { "CPF": "STATUS" }
-        criadoEm: new Date().toISOString()
-    };
-
-    try {
-        if (firebaseInitialized) {
-            await db.collection('tarefas').doc(id).set(novaTarefa);
-        }
-        
-        alert("Tarefa salva com sucesso!");
-        document.getElementById('activityModal').style.display = 'none';
-        
-        // Atualiza a lista local e a tela
-        await carregarDados(); 
-        renderTarefas();
-    } catch (error) {
-        console.error("Erro ao salvar:", error);
-        alert("Erro ao salvar tarefa.");
-    }
-}
-
-async function saveTarefa() {
-    const id = document.getElementById('tarefaId').value || Date.now().toString();
-    const titulo = document.getElementById('tarefaTitulo').value;
-    const desc = document.getElementById('tarefaDesc').value;
-    const prazo = document.getElementById('tarefaPrazo').value;
-    const urg = document.getElementById('tarefaUrg').value;
-    
-    // Pega os CPFs dos monitores selecionados
-    const selecionados = Array.from(document.querySelectorAll('#tarefaMonitores input:checked'))
-                              .map(cb => cb.value);
-
-    if (selecionados.length === 0) {
-        alert("Selecione pelo menos um monitor!");
-        return;
-    }
-
-    // Cria o objeto de status para cada monitor
-    const statusObj = {};
-    selecionados.forEach(cpf => {
-        statusObj[cpf] = "Pendente";
-    });
-
-    const novaTarefa = {
-        id: id,
-        titulo: titulo,
-        desc: desc,
-        prazo: prazo,
-        urg: urg,
-        monitores: selecionados, // Lista de CPFs (muito importante para o filtro)
-        status: statusObj
-    };
-
-    try {
-        if (firebaseInitialized) {
-            await db.collection('tarefas').doc(id.toString()).set(novaTarefa);
-        }
-        
-        // Atualiza a memória local
-        tarefas = tarefas.filter(t => t.id != id);
-        tarefas.push(novaTarefa);
-
-        alert("Sucesso! Tarefa salva e enviada aos monitores.");
-        document.getElementById('tarefaModal').style.display = 'none';
-        renderTarefas();
-    } catch (e) {
-        console.error(e);
-        alert("Erro ao gravar no Firebase.");
     }
 }
 
@@ -2028,19 +1863,21 @@ function submitExecution() {
     renderClubes(); // admin vê atualização imediata
 }
 function showSection(sectionId) {
-    if (!currentUser) return; // Impede o erro se não houver usuário
-
     document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
     const targetSection = document.getElementById(sectionId);
     if (targetSection) {
         targetSection.classList.add('active');
     }
 
-    // Unificado para Tarefas
-    if (sectionId === 'tarefas' || sectionId === 'atividades') {
-        renderTarefas();
+    // Adicione este bloco para disparar a renderização ao entrar na aba
+    if (sectionId === 'clubes') {
+        renderClubes();
+        if (currentUser.role === 'COORD') {
+            preencherFiltroAreas();
+        }
     }
     
+    if (sectionId === 'atividades') renderAtividades();
     if (sectionId === 'usuarios') renderUsuarios();
     if (sectionId === 'dashboard') updateDashboard();
 
@@ -2109,70 +1946,94 @@ function salvarTarefa() {
 
 function renderTarefas() {
     const lista = document.getElementById("tarefasLista");
-    if (!lista || !currentUser) return; // Se não houver utilizador logado, não faz nada
 
-    lista.innerHTML = '';
-
-    // Filtro: Se for monitor, só vê se o CPF dele estiver na lista 'monitores'
-    const visiveis = (currentUser.role === "COORD") 
-        ? tarefas 
-        : tarefas.filter(t => t.monitores && t.monitores.includes(currentUser.cpf));
-
-    if (visiveis.length === 0) {
-        lista.innerHTML = "<p style='text-align:center; padding:20px;'>Nenhuma tarefa atribuída.</p>";
-        return;
+    let visiveis = tarefas;
+    if (currentUser.role === "MON") {
+        visiveis = tarefas.filter(t =>
+            t.monitores.includes(currentUser.cpf)
+        );
     }
 
     lista.innerHTML = visiveis.map(t => {
-        const meuStatus = (t.status && t.status[currentUser.cpf]) ? t.status[currentUser.cpf] : "Pendente";
+
+        // URGÊNCIA (cor)
+        const urgClass =
+            t.urg === "Alta" ? "urg-alta" :
+            t.urg === "Média" ? "urg-media" :
+            "urg-baixa";
+
+        // STATUS PARA ADMIN
+        let statusAdmin = "";
+        if (currentUser.role === "COORD") {
+            statusAdmin = `
+                <div style="margin-top:8px;">
+                    <b>Status dos Monitores:</b>
+                    ${t.monitores.map(cpf => `
+                        <div style="font-size:12px;margin-top:3px;">
+                            ${users[cpf]?.nome || cpf} —
+                            ${badgeStatus(t.status[cpf])}
+                        </div>
+                    `).join("")}
+                </div>
+            `;
+        }
+
+        // STATUS PARA MONITOR
+        let statusMonitor = "";
+        if (currentUser.role === "MON") {
+            statusMonitor = `
+                <div style="margin-top:8px;">
+                    <b>Meu status:</b>
+                    ${badgeStatus(t.status[currentUser.cpf])}
+                    <div style="margin-top:5px;">
+                        <select onchange="mudarStatus(${t.id}, this.value)">
+                            <option ${t.status[currentUser.cpf]==="Pendente"?"selected":""}>Pendente</option>
+                            <option ${t.status[currentUser.cpf]==="Em andamento"?"selected":""}>Em andamento</option>
+                            <option ${t.status[currentUser.cpf]==="Concluída"?"selected":""}>Concluída</option>
+                        </select>
+                    </div>
+                </div>
+            `;
+        }
+
         return `
             <div class="activity-card">
-                <b>${t.titulo}</b>
-                <p>${t.desc}</p>
-                <small>Prazo: ${t.prazo}</small>
-                <div style="margin-top:10px;">
-                    ${currentUser.role === 'MON' ? 
-                        `Status: <b>${meuStatus}</b>` : 
-                        `Responsáveis: ${t.monitores.length} monitores`
-                    }
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <b style="font-size:16px;">${t.titulo}</b>
+                    <span class="urgency-tag ${urgClass}">
+                        ${t.urg}
+                    </span>
                 </div>
-            </div>`;
-    }).join("");
+
+                <p style="font-size:13px;margin-top:5px;">
+                    ${t.desc}
+                </p>
+
+                <small>
+                    📅 Prazo: <b>${t.prazo}</b>
+                </small>
+
+                ${statusAdmin}
+                ${statusMonitor}
+
+                ${currentUser.role === "COORD" ? `
+                    <div style="margin-top:10px;">
+                        <button class="btn-sm btn-warning"
+                            onclick="openTarefaModal(${t.id})">
+                            Editar
+                        </button>
+                        <button class="btn-sm btn-danger"
+                            onclick="excluirTarefa(${t.id})">
+                            Excluir
+                        </button>
+                    </div>
+                ` : ""}
+            </div>
+        `;
+    }).join("") || "<p>Nenhuma tarefa cadastrada.</p>";
+    updateDashboard();
 }
-function login() {
-    // Remove tudo que não é número do CPF digitado
-    const cpfInput = document.getElementById('loginCpf').value.replace(/\D/g, '');
-    const senhaInput = document.getElementById('loginPassword').value;
 
-    if (!users || Object.keys(users).length === 0) {
-        alert("Erro: Lista de utilizadores ainda não carregada. Aguarde um segundo e tente novamente.");
-        return;
-    }
-
-    // Procura o utilizador comparando apenas os números do CPF
-    const user = Object.values(users).find(u => {
-        const userCpf = u.cpf.replace(/\D/g, '');
-        return userCpf === cpfInput && u.senha === senhaInput;
-    });
-
-    if (user) {
-        currentUser = user;
-        localStorage.setItem('currentUser', JSON.stringify(user));
-        document.getElementById('authScreen').style.display = 'none';
-        document.getElementById('appScreen').style.display = 'flex';
-        
-        // Configura permissões
-        if (user.role === 'COORD') {
-            document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'block');
-            showSection('dashboard');
-        } else {
-            document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
-            showSection('tarefas'); // Monitor vai direto para tarefas
-        }
-    } else {
-        alert('CPF ou Senha incorretos. Verifique se o utilizador está cadastrado.');
-    }
-}
 function mudarStatus(id, status) {
     const tarefa = tarefas.find(t => t.id === id);
     if (!tarefa) return;
