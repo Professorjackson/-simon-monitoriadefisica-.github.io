@@ -149,20 +149,7 @@
                 <h2>⚛️ SIMON</h2>
                 <h4>Sistema Integrado de Monitoria Online</h4>
                 <h3>Entrar no Sistema</h3>
-                
-                <div style="background: #eef2ff; border: 1px solid #6366f1; padding: 12px; border-radius: 8px; margin-bottom: 15px;">
-                    <div style="font-size: 12px; font-weight: 600; color: #4f46e5; margin-bottom: 8px;">
-                        🔑 Login Administrador Padrão:
-                    </div>
-                    <div style="font-size: 11px; color: #64748b;">
-                        <strong>CPF:</strong> 00000000000<br>
-                        <strong>PIN:</strong> 1234
-                    </div>
-                    <div style="font-size: 10px; color: #64748b; margin-top: 8px; font-style: italic;">
-                        ⚠️ Altere os dados do admin nas configurações após o primeiro login!
-                    </div>
-                </div>
-                
+                             
                 <div id="loginError" class="error-message hidden"></div>
                 <div class="form-group">
                     <label>CPF (apenas números)</label>
@@ -340,7 +327,7 @@
                             As medalhas comprovam sua evolução técnica. Ao completar seu quadro de medalhas, você atinge o selo <b>Monitor Cientista</b> e desbloqueia:
                         </p>
                         <ul style="font-size: 12px; color: #78350f; padding-left: 20px; margin: 0; line-height: 1.8;">
-                            <li>✅ <b>Pontuação Extra:</b> Bônus nas provas trimestrais de Física</li>
+                            <li>✅ <b>Pontuação Extra:</b> Bônus máximo nas provas trimestrais de Física</li>
                             <li>✅ <b>Prioridade Total:</b> Preferência em temas de pesquisa, feiras e viagens</li>
                             <li>✅ <b>Liderança:</b> Elegibilidade para concorrer à <b>Presidência da Monitoria</b></li>
                         </ul>
@@ -349,6 +336,18 @@
 
                 <div class="card">
                     <h4 style="margin-bottom: 15px;">🎯 Benefícios por Nível</h4>
+
+<div style="display: flex; align-items: center; justify-content: space-between; background: #ffffff; padding: 12px; border-radius: 8px; border-left: 4px solid #0fe04e;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <div style="background: #0fe04e; color: white; width: 100px; text-align: center; padding: 4px; border-radius: 4px; font-size: 10px; font-weight: bold;">INICIANTE</div>
+                <span style="font-size: 12px; color: #475569;">Fase de adaptação e treinamento.</span>
+            </div>
+            <div style="text-align: right;">
+                <span style="display: block; font-size: 14px; font-weight: bold; color: #1e293b;">+ 1,0</span>
+                <span style="font-size: 9px; color: #94a3b8;">PONTO EXTRA</span>
+            </div>
+        </div>
+
                     <div style="display: flex; flex-direction: column; gap: 10px;">
                         <div style="display: flex; align-items: center; justify-content: space-between; background: #ffffff; padding: 12px; border-radius: 8px; border-left: 4px solid #3b82f6;">
                             <div style="display: flex; align-items: center; gap: 10px;">
@@ -386,30 +385,14 @@
                         <div style="display: flex; align-items: center; justify-content: space-between; background: #ffffff; padding: 12px; border-radius: 8px; border-left: 4px solid #ef4444;">
                             <div style="display: flex; align-items: center; gap: 10px;">
                                 <div style="background: #ef4444; color: white; min-width: 100px; text-align: center; padding: 4px; border-radius: 4px; font-size: 10px; font-weight: bold;">LÍDER</div>
-                                <span style="font-size: 12px; color: #b91c1c; font-weight: 500;">Gestão e liderança da equipe</span>
+                                <span style="font-size: 12px; color: #475569; font-weight: 500;">Gestão e liderança da equipe</span>
                             </div>
                             <div style="text-align: right;">
                                 <span style="display: block; font-size: 14px; font-weight: bold; color: #b91c1c;">+ 4.5</span>
                                 <span style="font-size: 9px; color: #94a3b8;">PONTOS EXTRA</span>
                             </div>
                         </div>
-
-                        <div style="display: flex; align-items: center; justify-content: space-between; background: #d1fae5; padding: 12px; border-radius: 8px; border-left: 4px solid #10b981;">
-                            <div style="display: flex; align-items: center; gap: 10px;">
-                                <div style="background: #10b981; color: white; min-width: 100px; text-align: center; padding: 4px; border-radius: 4px; font-size: 10px; font-weight: bold;">CIENTISTA</div>
-                                <span style="font-size: 12px; color: #065f46; font-weight: 600;">Selo especial: 7 medalhas 🏆</span>
-                            </div>
-                            <div style="text-align: right;">
-                                <span style="display: block; font-size: 14px; font-weight: bold; color: #10b981;">SELO</span>
-                                <span style="font-size: 9px; color: #94a3b8;">PERMANENTE</span>
-                            </div>
-                        </div>
                     </div>
-                </div>
-
-                <div class="card">
-                    <h3 style="margin-bottom: 15px;">📋 Tarefas Urgentes</h3>
-                    <div id="dashTarefasUrgentes"></div>
                 </div>
             </div>
 
@@ -524,11 +507,6 @@
                     <h3>📊 Atividade Recente</h3>
                     <div id="adminAtividadeRecente"></div>
                 </div>
-
-                <div class="card">
-                    <h3>🏆 Top 5 Monitores do Mês</h3>
-                    <div id="adminTopMonitores"></div>
-                </div>
             </div>
 
             <!-- Gerenciar Monitores -->
@@ -589,7 +567,26 @@
                     <button class="btn-sm btn-success" onclick="openNovoAdminModal()" style="margin-bottom: 15px;">➕ Adicionar Admin</button>
                     <div id="listaAdmins"></div>
                 </div>
-
+<div class="card">
+    <h3>👥 Gerenciar Administradores</h3>
+    <p style="color: #64748b; font-size: 13px; margin-bottom: 15px;">
+        Gerencie os administradores do sistema
+    </p>
+    <table>
+        <thead>
+            <tr>
+                <th>Nome</th>
+                <th>CPF</th>
+                <th>Celular</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody id="tabelaAdmins"></tbody>
+    </table>
+    <button class="btn-sm btn-success" onclick="openNovoAdminModal()" style="margin-top: 10px;">
+        + Adicionar Administrador
+    </button>
+</div>
                 <div class="card">
     <h3>🗑️ Limpeza de Dados</h3>
     <p style="color: #64748b; font-size: 13px; margin-bottom: 15px;">
@@ -629,49 +626,50 @@
                     </div>
                 </div>
 
-                <div class="card">
-                    <h3>📈 Estatísticas Gerais</h3>
-                    <div id="estatisticasGerais"></div>
-                </div>
             </div>
         </div>
     </div>
 
     <!-- Modal: Novo Admin -->
-    <div id="adminModal" class="modal">
-        <div class="modal-content">
-            <h3>Adicionar Administrador</h3>
-            <div id="adminModalError" class="error-message hidden"></div>
-            
-            <div class="form-group">
-                <label>Nome Completo</label>
-                <input type="text" id="adminNome">
-            </div>
-            
-            <div class="form-group">
-                <label>CPF</label>
-                <input type="text" id="adminCPF" maxlength="11">
-            </div>
-            
-            <div class="form-group">
-                <label>Celular</label>
-                <input type="text" id="adminCelular">
-            </div>
-            
-            <div class="form-group">
-                <label>PIN (4 dígitos)</label>
-                <div class="pin-input-group" id="adminPinGroup">
-                    <input class="pin-box" type="password" maxlength="1">
-                    <input class="pin-box" type="password" maxlength="1">
-                    <input class="pin-box" type="password" maxlength="1">
-                    <input class="pin-box" type="password" maxlength="1">
-                </div>
-            </div>
-            
-            <button class="btn btn-success" onclick="salvarAdmin()">Adicionar</button>
-            <button class="link-btn" onclick="fecharAdminModal()">Cancelar</button>
+<div id="adminModal" class="modal">
+    <div class="modal-content">
+        <h3 id="adminModalTitulo">Adicionar Administrador</h3>
+        <div id="adminModalError" class="error-message hidden"></div>
+        
+        <input type="hidden" id="adminId">
+        
+        <div class="form-group">
+            <label>Nome Completo</label>
+            <input type="text" id="adminNome">
         </div>
+        
+        <div class="form-group">
+            <label>CPF</label>
+            <input type="text" id="adminCPF" maxlength="11">
+        </div>
+        
+        <div class="form-group">
+            <label>Celular</label>
+            <input type="text" id="adminCelular">
+        </div>
+        
+        <div class="form-group">
+            <label>PIN (4 dígitos) - Deixe em branco para manter o atual</label>
+            <div class="pin-input-group" id="adminPinGroup">
+                <input class="pin-box" type="password" maxlength="1">
+                <input class="pin-box" type="password" maxlength="1">
+                <input class="pin-box" type="password" maxlength="1">
+                <input class="pin-box" type="password" maxlength="1">
+            </div>
+            <small style="color: #64748b; font-size: 11px; display: block; margin-top: 5px;">
+                💡 Dica: Ao editar, só preencha o PIN se quiser alterá-lo
+            </small>
+        </div>
+        
+        <button class="btn btn-success" onclick="salvarAdmin()">Salvar</button>
+        <button class="link-btn" onclick="fecharAdminModal()">Cancelar</button>
     </div>
+</div>
 
     <!-- Modal: Novo/Editar Monitor -->
     <div id="monitorModal" class="modal">
@@ -1519,7 +1517,7 @@
             // Mostrar pontuação detalhada
             document.getElementById('dashPontuacaoDetalhada').innerHTML = `
                 <div style="font-size: 11px; color: #64748b; margin-top: 5px;">
-                    Avaliação: <strong>${pontuacao.avaliacao}/10</strong> • 
+                    Avaliação: <strong>${pontuacao.avaliacao}/10</strong> |
                     Medalhas: <strong>${pontuacao.medalhas}/35</strong>
                 </div>
             `;
@@ -1971,7 +1969,184 @@ function atualizarGerenciarMonitores() {
 
             document.getElementById('adminListaTarefas').innerHTML = html;
         }
+// ==================== GERENCIAR ADMINS ====================
 
+function atualizarTabelaAdmins() {
+    const admins = monitores.filter(m => m.tipo === 'admin');
+    
+    const html = admins.length > 0
+        ? admins.map(a => `
+            <tr>
+                <td>${a.nome}</td>
+                <td>${formatCPF(a.cpf)}</td>
+                <td>${a.celular || 'N/A'}</td>
+                <td>
+                    <button class="btn-sm btn-info" onclick="editarAdmin('${a.id}')">
+                        ✏️ Editar
+                    </button>
+                    ${admins.length > 1 && a.id !== currentUser.id ? `
+                        <button class="btn-sm btn-danger" onclick="confirmarExclusaoAdmin('${a.id}', '${a.nome}')">
+                            🗑️ Excluir
+                        </button>
+                    ` : ''}
+                </td>
+            </tr>
+        `).join('')
+        : '<tr><td colspan="4" style="text-align: center; color: #64748b; padding: 20px;">Nenhum administrador encontrado</td></tr>';
+    
+    document.getElementById('tabelaAdmins').innerHTML = html;
+}
+
+function openNovoAdminModal() {
+    document.getElementById('adminModalTitulo').textContent = 'Adicionar Administrador';
+    document.getElementById('adminId').value = '';
+    document.getElementById('adminNome').value = '';
+    document.getElementById('adminCPF').value = '';
+    document.getElementById('adminCelular').value = '';
+    clearPinInputs('adminPinGroup');
+    document.getElementById('adminModal').classList.add('show');
+}
+
+function editarAdmin(adminId) {
+    const admin = monitores.find(m => m.id === adminId);
+    if (!admin) return;
+    
+    document.getElementById('adminModalTitulo').textContent = 'Editar Administrador';
+    document.getElementById('adminId').value = admin.id;
+    document.getElementById('adminNome').value = admin.nome;
+    document.getElementById('adminCPF').value = admin.cpf;
+    document.getElementById('adminCelular').value = admin.celular || '';
+    clearPinInputs('adminPinGroup');
+    
+    document.getElementById('adminModal').classList.add('show');
+}
+
+function fecharAdminModal() {
+    document.getElementById('adminModal').classList.remove('show');
+    document.getElementById('adminId').value = '';
+    document.getElementById('adminNome').value = '';
+    document.getElementById('adminCPF').value = '';
+    document.getElementById('adminCelular').value = '';
+    clearPinInputs('adminPinGroup');
+}
+
+async function salvarAdmin() {
+    const id = document.getElementById('adminId').value;
+    const nome = document.getElementById('adminNome').value.trim();
+    const cpf = document.getElementById('adminCPF').value.trim();
+    const celular = document.getElementById('adminCelular').value.trim();
+    const pin = getPinValue('adminPinGroup');
+    
+    // Validações
+    if (!nome || !cpf) {
+        showError('adminModalError', 'Preencha nome e CPF');
+        return;
+    }
+    
+    if (cpf.length !== 11) {
+        showError('adminModalError', 'CPF deve ter 11 dígitos');
+        return;
+    }
+    
+    // Se for novo admin, PIN é obrigatório
+    if (!id && pin.length !== 4) {
+        showError('adminModalError', 'PIN de 4 dígitos é obrigatório para novo admin');
+        return;
+    }
+    
+    // Se está editando e forneceu PIN, validar
+    if (id && pin.length > 0 && pin.length !== 4) {
+        showError('adminModalError', 'PIN deve ter 4 dígitos');
+        return;
+    }
+    
+    try {
+        const data = {
+            nome,
+            cpf,
+            celular: celular || null,
+            tipo: 'admin'
+        };
+        
+        // Adicionar PIN apenas se fornecido
+        if (pin.length === 4) {
+            data.pin = pin;
+        }
+        
+        if (id) {
+            // Atualizar admin existente
+            console.log('Atualizando admin:', id);
+            
+            // Se não forneceu novo PIN, remover do objeto
+            if (pin.length === 0) {
+                delete data.pin;
+            }
+            
+            await db.collection('monitores').doc(id).update(data);
+            console.log('Admin atualizado com sucesso');
+            
+            // Atualizar dados do usuário atual se for ele mesmo
+            if (id === currentUser.id) {
+                currentUser.nome = nome;
+                currentUser.cpf = cpf;
+                currentUser.celular = celular;
+            }
+        } else {
+            // Verificar se CPF já existe
+            const snapshot = await db.collection('monitores')
+                .where('cpf', '==', cpf)
+                .get();
+            
+            if (!snapshot.empty) {
+                showError('adminModalError', 'CPF já cadastrado no sistema');
+                return;
+            }
+            
+            // Criar novo admin
+            data.dataCadastro = firebase.firestore.FieldValue.serverTimestamp();
+            data.medalhas = [];
+            
+            console.log('Criando novo admin:', data);
+            await db.collection('monitores').add(data);
+            console.log('Admin criado com sucesso');
+        }
+        
+        fecharAdminModal();
+        alert(id ? 'Administrador atualizado com sucesso!' : 'Administrador adicionado com sucesso!');
+    } catch (error) {
+        console.error('Erro ao salvar admin:', error);
+        showError('adminModalError', 'Erro ao salvar: ' + error.message);
+    }
+}
+
+async function confirmarExclusaoAdmin(adminId, nomeAdmin) {
+    const admins = monitores.filter(m => m.tipo === 'admin');
+    
+    // Proteções
+    if (admins.length === 1) {
+        alert('⚠️ Não é possível excluir o último administrador do sistema!');
+        return;
+    }
+    
+    if (adminId === currentUser.id) {
+        alert('⚠️ Você não pode excluir sua própria conta!');
+        return;
+    }
+    
+    if (!confirm(`Tem certeza que deseja excluir o administrador "${nomeAdmin}"?\n\nEsta ação não pode ser desfeita.`)) {
+        return;
+    }
+    
+    try {
+        console.log('Excluindo admin:', adminId);
+        await db.collection('monitores').doc(adminId).delete();
+        console.log('Admin excluído com sucesso');
+        alert('Administrador excluído com sucesso!');
+    } catch (error) {
+        console.error('Erro ao excluir admin:', error);
+        alert('Erro ao excluir administrador: ' + error.message);
+    }
+}
         // ==================== MODAL FUNCTIONS ====================
         function openNovoMonitorModal() {
             document.getElementById('monitorModalTitulo').textContent = 'Novo Monitor';
@@ -2649,6 +2824,7 @@ alert('Avaliação salva com sucesso!\n\nPontos do mês: ' + pontuacaoMes + '\nM
                 </div>
             `;
             document.getElementById('estatisticasGerais').innerHTML = estatisticasHtml;
+            atualizarTabelaAdmins();
         }
 
         function openNovoAdminModal() {
