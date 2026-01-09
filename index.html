@@ -533,16 +533,27 @@
             </div>
 
             <!-- Gerenciar Tarefas -->
-            <div id="gerenciarTarefas" class="screen">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                    <h2>📝 Gerenciar Tarefas</h2>
-                    <button class="btn-sm btn-success" onclick="openNovaTarefaModal()">➕ Nova Tarefa</button>
-                </div>
-                
-                <div class="card">
-                    <div id="adminListaTarefas"></div>
-                </div>
-            </div>
+<div id="gerenciarTarefas" class="screen">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2>📝 Gerenciar Tarefas</h2>
+        <button class="btn-sm btn-success" onclick="openNovaTarefaModal()">➕ Nova Tarefa</button>
+    </div>
+    
+    <div class="card">
+        <table>
+            <thead>
+                <tr>
+                    <th>Tarefa</th>
+                    <th>Monitores</th>
+                    <th>Urgência / Prazo</th>
+                    <th>Status</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody id="tabelaTarefas"></tbody>
+        </table>
+    </div>
+</div>
 
             <!-- Avaliar Monitores -->
             <div id="avaliarMonitores" class="screen">
@@ -1583,32 +1594,55 @@ function atualizarTarefas() {
     let tarefasFiltradas = minhasTarefas;
 
     if (currentTarefaFilter === 'pendentes') {
-        tarefasFiltradas = minhasTarefas.filter(t => t.status !== 'Concluída');
+        tarefasFiltradas = minhasTarefas.filter(t => {
+            const conclusoes = t.conclusoes || {};
+            return !conclusoes[currentUser.id]; // Não concluída por mim
+        });
     } else if (currentTarefaFilter === 'concluidas') {
-        tarefasFiltradas = minhasTarefas.filter(t => t.status === 'Concluída');
+        tarefasFiltradas = minhasTarefas.filter(t => {
+            const conclusoes = t.conclusoes || {};
+            return conclusoes[currentUser.id]; // Concluída por mim
+        });
     }
 
     const html = tarefasFiltradas.length > 0
-        ? tarefasFiltradas.map(t => `
-            <div class="activity-card">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                    <strong>${t.titulo}</strong>
-                    <div style="display: flex; gap: 5px;">
-                        <span class="urgency-tag ${getUrgenciaClass(t.urgencia)}">${t.urgencia}</span>
-                        <span class="status-badge ${getStatusClass(t.status)}">${t.status}</span>
+        ? tarefasFiltradas.map(t => {
+            const conclusoes = t.conclusoes || {};
+            const jaConcluiPorMim = conclusoes[currentUser.id];
+            const monitoresIds = t.monitoresIds || [t.monitorId];
+            const totalMonitores = monitoresIds.length;
+            const concluidas = Object.values(conclusoes).filter(v => v === true).length;
+            
+            return `
+                <div class="activity-card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <strong>${t.titulo}</strong>
+                        <div style="display: flex; gap: 5px;">
+                            <span class="urgency-tag ${getUrgenciaClass(t.urgencia)}">${t.urgencia}</span>
+                            <span class="status-badge ${getStatusClass(t.status)}">${t.status}</span>
+                        </div>
                     </div>
+                    <p style="font-size: 13px; color: #64748b; margin-bottom: 10px;">${t.descricao}</p>
+                    <div style="font-size: 12px; color: #64748b; margin-bottom: 8px;">
+                        📅 Prazo: ${formatDate(t.prazo)}
+                    </div>
+                    ${totalMonitores > 1 ? `
+                        <div style="font-size: 11px; color: #64748b; background: #f8fafc; padding: 6px 10px; border-radius: 6px; margin-bottom: 10px;">
+                            👥 Tarefa compartilhada: ${concluidas}/${totalMonitores} monitores concluíram
+                        </div>
+                    ` : ''}
+                    ${!jaConcluiPorMim ? `
+                        <button class="btn-sm btn-success" onclick="concluirTarefa('${t.id}')" style="margin-top: 10px;">
+                            ✓ Marcar como Concluída
+                        </button>
+                    ` : `
+                        <div style="padding: 8px; background: #d1fae5; color: #065f46; border-radius: 6px; text-align: center; font-size: 12px; font-weight: bold; margin-top: 10px;">
+                            ✅ Você já concluiu esta tarefa
+                        </div>
+                    `}
                 </div>
-                <p style="font-size: 13px; color: #64748b; margin-bottom: 10px;">${t.descricao}</p>
-                <div style="font-size: 12px; color: #64748b;">
-                    📅 Prazo: ${formatDate(t.prazo)}
-                </div>
-                ${t.status !== 'Concluída' ? `
-                    <button class="btn-sm btn-success" onclick="concluirTarefa('${t.id}')" style="margin-top: 10px;">
-                        ✓ Marcar como Concluída
-                    </button>
-                ` : ''}
-            </div>
-        `).join('')
+            `;
+        }).join('')
         : '<p style="color: #64748b; text-align: center; padding: 20px;">Nenhuma tarefa encontrada</p>';
 
     document.getElementById('listaTarefas').innerHTML = html;
@@ -1620,17 +1654,30 @@ function atualizarTarefas() {
 
 async function concluirTarefa(tarefaId) {
     try {
+        const tarefa = tarefas.find(t => t.id === tarefaId);
+        if (!tarefa) {
+            alert('Tarefa não encontrada');
+            return;
+        }
+        
+        // Marcar como concluída para o monitor atual
+        const conclusoes = tarefa.conclusoes || {};
+        conclusoes[currentUser.id] = true;
+        
+        // Verificar se todos concluíram
+        const monitoresIds = tarefa.monitoresIds || [tarefa.monitorId];
+        const todosConcluiram = monitoresIds.every(id => conclusoes[id] === true);
+        
+        // Atualizar tarefa
         await db.collection('tarefas').doc(tarefaId).update({
-            status: 'Concluída'
+            conclusoes: conclusoes,
+            status: todosConcluiram ? 'Concluída' : 'Em Andamento'
         });
 
-        await carregarTarefas();
-        atualizarTarefas();
-        atualizarDashboard();
-        alert('Tarefa concluída! ✅');
+        alert('Tarefa marcada como concluída! ✅');
     } catch (error) {
         console.error('Erro ao concluir tarefa:', error);
-        alert('Erro ao concluir tarefa');
+        alert('Erro ao concluir tarefa: ' + error.message);
     }
 }
 
@@ -1904,35 +1951,67 @@ function atualizarGerenciarMonitores() {
             }
         }
 
-        function atualizarGerenciarTarefas() {
-            const html = tarefas.length > 0
-                ? tarefas.map(t => {
-                    const monitor = monitores.find(m => m.id === t.monitorId);
-                    return `
-                        <div class="activity-card">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                                <strong>${t.titulo}</strong>
-                                <div style="display: flex; gap: 5px;">
-                                    <span class="urgency-tag ${getUrgenciaClass(t.urgencia)}">${t.urgencia}</span>
-                                    <span class="status-badge ${getStatusClass(t.status)}">${t.status}</span>
-                                </div>
-                            </div>
-                            <p style="font-size: 13px; color: #64748b; margin-bottom: 10px;">${t.descricao}</p>
-                            <div style="font-size: 12px; color: #64748b; margin-bottom: 10px;">
-                                👤 Monitor: ${monitor?.nome || 'N/A'}<br>
-                                📅 Prazo: ${formatDate(t.prazo)}
-                            </div>
-                            <div style="display: flex; gap: 5px;">
-                                <button class="btn-sm btn-info" onclick="editarTarefa('${t.id}')">Editar</button>
-                                <button class="btn-sm btn-danger" onclick="excluirTarefa('${t.id}')">Excluir</button>
-                            </div>
+function atualizarGerenciarTarefas() {
+    const html = tarefas.length > 0
+        ? tarefas.map(t => {
+            const monitoresIds = t.monitoresIds || [t.monitorId];
+            const conclusoes = t.conclusoes || {};
+            
+            // Calcular progresso
+            const totalMonitores = monitoresIds.length;
+            const concluidas = Object.values(conclusoes).filter(v => v === true).length;
+            const percentual = totalMonitores > 0 ? Math.round((concluidas / totalMonitores) * 100) : 0;
+            
+            // Nomes dos monitores
+            const monitoresNomes = monitoresIds.map(id => {
+                const m = monitores.find(monitor => monitor.id === id);
+                const concluiu = conclusoes[id];
+                return m ? `
+                    <div style="display: flex; align-items: center; gap: 5px; font-size: 11px; margin-top: 3px;">
+                        ${concluiu ? '✅' : '⏳'} ${m.nome}
+                    </div>
+                ` : '';
+            }).join('');
+            
+            return `
+                <tr>
+                    <td>
+                        <strong>${t.titulo}</strong>
+                        <div style="font-size: 12px; color: #64748b; margin-top: 3px;">${t.descricao}</div>
+                    </td>
+                    <td>
+                        <div style="font-size: 12px;">
+                            ${monitoresNomes}
                         </div>
-                    `;
-                }).join('')
-                : '<p style="color: #64748b; text-align: center; padding: 20px;">Nenhuma tarefa cadastrada</p>';
+                        <div style="margin-top: 8px; font-size: 11px; font-weight: bold; color: #6366f1;">
+                            ${concluidas}/${totalMonitores} concluíram (${percentual}%)
+                        </div>
+                    </td>
+                    <td>
+                        <span class="urgency-tag ${getUrgenciaClass(t.urgencia)}">${t.urgencia}</span>
+                        <div style="font-size: 11px; color: #64748b; margin-top: 5px;">
+                            ${formatDate(t.prazo)}
+                        </div>
+                    </td>
+                    <td>
+                        <span class="status-badge ${getStatusClass(t.status)}">${t.status}</span>
+                    </td>
+                    <td>
+                        <button class="btn-sm btn-info" onclick="editarTarefa('${t.id}')">Editar</button>
+                        <button class="btn-sm btn-danger" onclick="excluirTarefa('${t.id}')">Excluir</button>
+                        ${concluidas < totalMonitores ? `
+                            <button class="btn-sm btn-warning" onclick="resetarConclusoes('${t.id}')" title="Resetar conclusões">
+                                🔄 Resetar
+                            </button>
+                        ` : ''}
+                    </td>
+                </tr>
+            `;
+        }).join('')
+        : '<tr><td colspan="5" style="text-align: center; color: #64748b; padding: 30px;">Nenhuma tarefa cadastrada</td></tr>';
 
-            document.getElementById('adminListaTarefas').innerHTML = html;
-        }
+    document.getElementById('tabelaTarefas').innerHTML = html;
+}
 // ==================== GERENCIAR ADMINS ====================
 
 function atualizarTabelaAdmins() {
@@ -2109,6 +2188,32 @@ async function confirmarExclusaoAdmin(adminId, nomeAdmin) {
     } catch (error) {
         console.error('Erro ao excluir admin:', error);
         alert('Erro ao excluir administrador: ' + error.message);
+    }
+}
+async function resetarConclusoes(tarefaId) {
+    if (!confirm('Deseja resetar as conclusões desta tarefa?\n\nTodos os monitores terão que concluir novamente.')) {
+        return;
+    }
+    
+    try {
+        const tarefa = tarefas.find(t => t.id === tarefaId);
+        if (!tarefa) return;
+        
+        const monitoresIds = tarefa.monitoresIds || [tarefa.monitorId];
+        const novasConclusoes = {};
+        monitoresIds.forEach(id => {
+            novasConclusoes[id] = false;
+        });
+        
+        await db.collection('tarefas').doc(tarefaId).update({
+            conclusoes: novasConclusoes,
+            status: 'Pendente'
+        });
+        
+        alert('Conclusões resetadas! Todos precisam concluir novamente.');
+    } catch (error) {
+        console.error('Erro ao resetar conclusões:', error);
+        alert('Erro ao resetar: ' + error.message);
     }
 }
         // ==================== MODAL FUNCTIONS ====================
@@ -2362,32 +2467,44 @@ async function salvarTarefa() {
             urgencia,
             monitoresIds: monitoresSelecionados,
             monitorId: monitoresSelecionados[0], // Compatibilidade
-            status: id ? undefined : 'Pendente'
         };
-
-        // Remover campos undefined
-        Object.keys(data).forEach(key => data[key] === undefined && delete data[key]);
 
         if (id) {
             // Atualizar tarefa existente
             console.log('Atualizando tarefa:', id);
+            
+            // Pegar tarefa atual para manter conclusões existentes
+            const tarefaAtual = tarefas.find(t => t.id === id);
+            const conclusoesAtuais = tarefaAtual?.conclusoes || {};
+            
+            // Criar objeto de conclusões para novos monitores
+            const novasConclusoes = {};
+            monitoresSelecionados.forEach(monitorId => {
+                // Manter conclusão existente ou marcar como não concluída
+                novasConclusoes[monitorId] = conclusoesAtuais[monitorId] || false;
+            });
+            
+            data.conclusoes = novasConclusoes;
+            
             await db.collection('tarefas').doc(id).update(data);
             console.log('Tarefa atualizada com sucesso');
         } else {
             // Criar nova tarefa
+            // Inicializar conclusões: todos como false (pendente)
+            const conclusoes = {};
+            monitoresSelecionados.forEach(monitorId => {
+                conclusoes[monitorId] = false;
+            });
+            
+            data.conclusoes = conclusoes;
             data.status = 'Pendente';
             data.dataCriacao = firebase.firestore.FieldValue.serverTimestamp();
+            
             console.log('Criando nova tarefa:', data);
             await db.collection('tarefas').add(data);
             console.log('Tarefa criada com sucesso');
         }
 
-        // Recarregar dados
-        await carregarTarefas();
-        atualizarGerenciarTarefas();
-        if (currentUser.tipo !== 'admin') {
-            atualizarTarefas();
-        }
         fecharTarefaModal();
         alert(id ? 'Tarefa atualizada com sucesso!' : 'Tarefa criada com sucesso!');
     } catch (error) {
