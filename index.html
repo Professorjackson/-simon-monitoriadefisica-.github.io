@@ -735,6 +735,7 @@
                     <option value="3C">3° Ano C</option>
                     <option value="3D">3° Ano D</option>
                     <option value="3E">3° Ano E</option>
+
                 </select>
             </div>
             
@@ -1541,57 +1542,134 @@ async function startApp() {
             });
         }
 
-        // ==================== DASHBOARD ====================
-        function atualizarDashboard() {
-            const minhasTarefas = tarefas.filter(t => t.monitorId === currentUser.id);
-            const tarefasConcluidas = minhasTarefas.filter(t => t.status === 'Concluída').length;
-            const tarefasPendentes = minhasTarefas.filter(t => t.status !== 'Concluída').length;
-            
-            // Calcular pontuações separadas
-            const pontuacao = calcularPontuacaoTotal(currentUser);
-            const nivelInfo = getNivelInfo(pontuacao.total);
-            const ehCientista = isMonitorCientista(currentUser);
-            
-            document.getElementById('dashAvatar').textContent = getInitials(currentUser.nome);
-            document.getElementById('dashNome').textContent = currentUser.nome;
-            document.getElementById('dashTurma').textContent = currentUser.turma;
-            document.getElementById('dashLevel').textContent = nivelInfo.nome;
-            document.getElementById('dashLevel').style.background = nivelInfo.cor;
-            document.getElementById('dashTarefasConcluidas').textContent = tarefasConcluidas;
-            document.getElementById('dashTarefasPendentes').textContent = tarefasPendentes;
-            document.getElementById('dashPontuacao').textContent = pontuacao.total;
-            document.getElementById('dashMedalhas').textContent = (currentUser.medalhas || []).length + '/7';
+// ==================== DASHBOARD ====================
+function atualizarDashboard() {
+    // Verificar se elementos existem
+    if (!document.getElementById('dashAvatar')) {
+        console.warn('⚠️ Elementos do dashboard não encontrados ainda');
+        return;
+    }
 
-            // Mostrar pontuação detalhada
-            document.getElementById('dashPontuacaoDetalhada').innerHTML = `
-                <div style="font-size: 11px; color: #64748b; margin-top: 5px;">
-                    Avaliação: <strong>${pontuacao.avaliacao}/10</strong> |
-                    Medalhas: <strong>${pontuacao.medalhas}/35</strong>
+    // Filtrar tarefas onde o monitor atual está incluído
+    const minhasTarefas = tarefas.filter(t => {
+        if (Array.isArray(t.monitoresIds)) {
+            return t.monitoresIds.includes(currentUser.id);
+        }
+        return t.monitorId === currentUser.id;
+    });
+    
+    // Contar tarefas baseado nas conclusões individuais
+    const tarefasConcluidas = minhasTarefas.filter(t => {
+        const conclusoes = t.conclusoes || {};
+        return conclusoes[currentUser.id] === true; // Concluída por MIM
+    }).length;
+    
+    const tarefasPendentes = minhasTarefas.filter(t => {
+        const conclusoes = t.conclusoes || {};
+        return conclusoes[currentUser.id] !== true; // NÃO concluída por mim
+    }).length;
+    
+    // Calcular pontuações separadas
+    const pontuacao = calcularPontuacaoTotal(currentUser);
+    const nivelInfo = getNivelInfo(pontuacao.total);
+    const ehCientista = isMonitorCientista(currentUser);
+    
+    // Atualizar elementos com verificação
+    const dashAvatar = document.getElementById('dashAvatar');
+    const dashNome = document.getElementById('dashNome');
+    const dashTurma = document.getElementById('dashTurma');
+    const dashLevel = document.getElementById('dashLevel');
+    const dashTarefasConcluidas = document.getElementById('dashTarefasConcluidas');
+    const dashTarefasPendentes = document.getElementById('dashTarefasPendentes');
+    const dashPontuacao = document.getElementById('dashPontuacao');
+    const dashMedalhas = document.getElementById('dashMedalhas');
+    const dashPontuacaoDetalhada = document.getElementById('dashPontuacaoDetalhada');
+    
+    if (dashAvatar) dashAvatar.textContent = getInitials(currentUser.nome);
+    if (dashNome) dashNome.textContent = currentUser.nome;
+    if (dashTurma) dashTurma.textContent = currentUser.turma;
+    if (dashLevel) {
+        dashLevel.textContent = nivelInfo.nome;
+        dashLevel.style.background = nivelInfo.cor;
+    }
+    if (dashTarefasConcluidas) dashTarefasConcluidas.textContent = tarefasConcluidas;
+    if (dashTarefasPendentes) dashTarefasPendentes.textContent = tarefasPendentes;
+    if (dashPontuacao) dashPontuacao.textContent = pontuacao.total;
+    if (dashMedalhas) dashMedalhas.textContent = (currentUser.medalhas || []).length + '/7';
+
+    // Mostrar pontuação detalhada
+    if (dashPontuacaoDetalhada) {
+        dashPontuacaoDetalhada.innerHTML = `
+            <div style="font-size: 11px; color: #64748b; margin-top: 5px;">
+                Avaliação: <strong>${pontuacao.avaliacao}/10</strong> • 
+                Medalhas: <strong>${pontuacao.medalhas}/35</strong>
+            </div>
+        `;
+    }
+
+    // Banner de Monitor Cientista
+    const bannerCientista = document.getElementById('cientistaBanner');
+    if (bannerCientista) {
+        bannerCientista.style.display = ehCientista ? 'block' : 'none';
+    }
+
+    // Mostrar medalhas no dashboard
+    const userMedalsDash = document.getElementById('userMedalsDash');
+    if (userMedalsDash) {
+        const medalhasHtml = MEDALHAS.map(medalha => {
+            const conquistada = (currentUser.medalhas || []).includes(medalha.id);
+            return `
+                <div class="medal-card ${conquistada ? 'unlocked' : 'locked'}">
+                    <div style="font-size: 32px;">${medalha.icon}</div>
+                    <div style="font-size: 11px; font-weight: bold; margin-top: 5px;">${medalha.nome}</div>
+                    <div style="font-size: 10px; color: #64748b; margin-top: 3px;">${medalha.descricao}</div>
+                    ${conquistada ? '<div style="margin-top: 5px; color: #10b981; font-weight: bold; font-size: 11px;">✓ +5 pts</div>' : ''}
                 </div>
             `;
+        }).join('');
+        userMedalsDash.innerHTML = medalhasHtml;
+    }
 
-            // Banner de Monitor Cientista
-            const bannerCientista = document.getElementById('cientistaBanner');
-            if (ehCientista) {
-                bannerCientista.style.display = 'block';
-            } else {
-                bannerCientista.style.display = 'none';
-            }
+    // Tarefas urgentes (que EU ainda não concluí)
+    const tarefasUrgentes = minhasTarefas
+        .filter(t => {
+            const conclusoes = t.conclusoes || {};
+            const naoConcluidaPorMim = !conclusoes[currentUser.id];
+            return t.urgencia === 'Alta' && naoConcluidaPorMim;
+        })
+        .slice(0, 5);
 
-            // Mostrar medalhas no dashboard
-            const medalhasHtml = MEDALHAS.map(medalha => {
-                const conquistada = (currentUser.medalhas || []).includes(medalha.id);
+    const dashTarefasUrgentes = document.getElementById('dashTarefasUrgentes');
+    if (dashTarefasUrgentes) {
+        const urgentesHtml = tarefasUrgentes.length > 0
+            ? tarefasUrgentes.map(t => {
+                const monitoresIds = t.monitoresIds || [t.monitorId];
+                const conclusoes = t.conclusoes || {};
+                const totalMonitores = monitoresIds.length;
+                const concluidas = Object.values(conclusoes).filter(v => v === true).length;
+                
                 return `
-                    <div class="medal-card ${conquistada ? 'unlocked' : 'locked'}">
-                        <div style="font-size: 32px;">${medalha.icon}</div>
-                        <div style="font-size: 11px; font-weight: bold; margin-top: 5px;">${medalha.nome}</div>
-                        <div style="font-size: 10px; color: #64748b; margin-top: 3px;">${medalha.descricao}</div>
-                        ${conquistada ? '<div style="margin-top: 5px; color: #10b981; font-weight: bold; font-size: 11px;">✓ +5 pts</div>' : ''}
+                    <div class="activity-card">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <strong>${t.titulo}</strong>
+                            <span class="urgency-tag ${getUrgenciaClass(t.urgencia)}">${t.urgencia}</span>
+                        </div>
+                        <div style="font-size: 12px; color: #64748b; margin-top: 5px;">
+                            Prazo: ${formatDate(t.prazo)}
+                        </div>
+                        ${totalMonitores > 1 ? `
+                            <div style="font-size: 11px; color: #64748b; margin-top: 5px;">
+                                👥 ${concluidas}/${totalMonitores} concluíram
+                            </div>
+                        ` : ''}
                     </div>
                 `;
-            }).join('');
-            document.getElementById('userMedalsDash').innerHTML = medalhasHtml;
-        }
+            }).join('')
+            : '<p style="color: #64748b; text-align: center;">Nenhuma tarefa urgente 🎉</p>';
+        
+        dashTarefasUrgentes.innerHTML = urgentesHtml;
+    }
+}
 
         // ==================== TAREFAS ====================
 function atualizarTarefas() {
@@ -1680,13 +1758,26 @@ async function concluirTarefa(tarefaId) {
         const monitoresIds = tarefa.monitoresIds || [tarefa.monitorId];
         const todosConcluiram = monitoresIds.every(id => conclusoes[id] === true);
         
-        // Atualizar tarefa
+        // Atualizar tarefa no Firebase
         await db.collection('tarefas').doc(tarefaId).update({
             conclusoes: conclusoes,
             status: todosConcluiram ? 'Concluída' : 'Em Andamento'
         });
 
+        // Atualizar tarefa localmente (para atualização instantânea)
+        const tarefaIndex = tarefas.findIndex(t => t.id === tarefaId);
+        if (tarefaIndex !== -1) {
+            tarefas[tarefaIndex].conclusoes = conclusoes;
+            tarefas[tarefaIndex].status = todosConcluiram ? 'Concluída' : 'Em Andamento';
+        }
+
+        // Atualizar interface IMEDIATAMENTE
+        atualizarTarefas();
+        atualizarDashboard();
+
+        // Feedback visual
         alert('Tarefa marcada como concluída! ✅');
+        
     } catch (error) {
         console.error('Erro ao concluir tarefa:', error);
         alert('Erro ao concluir tarefa: ' + error.message);
